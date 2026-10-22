@@ -18,6 +18,19 @@ Untuk menjalankannya, unduh repository lalu buka `index.html` di browser modern.
 
 **Penting:** ini prototipe antarmuka dan model edukasi sederhana, bukan aplikasi Android/APK dan bukan solver rangkaian umum. Noise yang diaktifkan saat ini adalah sinyal demonstrasi deterministik, bukan simulasi thermal noise atau shot noise fisik. Model dan batasannya dijelaskan di **[docs/physics-model.md](./docs/physics-model.md)**.
 
+## 📱 APK Android debug
+
+Workflow Android sudah disiapkan untuk membangun APK debug dari host Android WebView yang memuat prototipe secara offline.
+
+1. Buka tab **[Actions → Build Android debug APK](https://github.com/MazBayID/electron_logic/actions/workflows/android-debug.yml)**.
+2. Pilih workflow run terbaru dengan status **Success**.
+3. Pada bagian **Artifacts**, unduh `electron-logic-debug-apk`.
+4. Ekstrak ZIP artifact, lalu instal `app-debug.apk` di perangkat Android. Jika diminta, izinkan instalasi dari sumber tersebut.
+
+APK ini adalah **debug build** dengan application ID `com.mazbayid.electronlogic.debug`. APK ini dapat dipasang berdampingan dengan build package utama yang mungkin dibuat pada masa depan. Karena merupakan debug build, APK ini bukan rilis produksi.
+
+Setiap build hanya tersedia setelah workflow selesai berhasil. Jika build gagal, buka log langkah **Build debug APK** untuk melihat penyebabnya.
+
 ## 🧭 Arah produk
 
 Electron Logic ingin menggabungkan tiga hal yang sering terpisah:
