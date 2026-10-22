@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#07111b"><meta name="description" content="Electron Logic — prototipe interaktif visualisasi arus, kapasitor, noise, dan fault rangkaian.">
+<title>Electron Logic — Circuit Lab</title>
+<style>
+:root{color-scheme:dark;--bg:#07111b;--panel:#0d1b29;--panel2:#102235;--line:#20394c;--text:#e7f2fb;--muted:#8da7bb;--cyan:#4ce2ee;--green:#53f0a2;--orange:#ffb454;--red:#ff596b;--blue:#70a9ff}
+*{box-sizing:border-box}body{margin:0;background:radial-gradient(ellipse at 50% -20%,#14324a 0,transparent 55%),var(--bg);color:var(--text);font:14px/1.45 system-ui,-apple-system,Segoe UI,Roboto,sans-serif}
+button,select,input{font:inherit}button,select{background:#13283a;color:var(--text);border:1px solid #2b465b;border-radius:10px;padding:9px 12px}button{cursor:pointer}button:hover{border-color:var(--cyan)}button.primary{background:#0c3b48;border-color:#1a8591;color:#bafaff}.wrap{max-width:1240px;margin:auto;padding:18px}
+header{display:flex;align-items:center;justify-content:space-between;gap:14px;margin-bottom:18px}.brand{display:flex;align-items:center;gap:12px}.logo{display:grid;place-items:center;width:43px;height:43px;border:1px solid #247b8c;border-radius:13px;background:#0b2836;color:var(--cyan);font-size:24px;box-shadow:0 0 24px #28c6db20}.brand h1{font-size:19px;letter-spacing:.12em;margin:0}.brand p{margin:2px 0 0;color:var(--muted);font-size:12px}.tag{border:1px solid #4d3c25;color:var(--orange);border-radius:99px;padding:5px 9px;font-size:11px;white-space:nowrap}
+.layout{display:grid;grid-template-columns:minmax(0,1.65fr) minmax(280px,.85fr);gap:14px}.panel{border:1px solid var(--line);border-radius:16px;background:linear-gradient(145deg,#0d1b29f5,#091622f5);overflow:hidden;min-width:0}.panel-head{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:14px 16px;border-bottom:1px solid var(--line)}h2{font-size:13px;letter-spacing:.09em;text-transform:uppercase;margin:0}.sub{color:var(--muted);font-size:12px}.canvas-wrap{position:relative;background:radial-gradient(#1a3446 1px,transparent 1px);background-size:22px 22px;min-height:340px}canvas{display:block;width:100%;height:100%}#circuit{height:370px}#scope{height:150px}.canvas-label{position:absolute;top:12px;left:14px;color:#83a8bf;font-size:10px;letter-spacing:.14em}.legend{display:flex;flex-wrap:wrap;gap:12px;padding:11px 15px;border-top:1px solid var(--line);color:var(--muted);font-size:11px}.dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:5px}.metrics{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;padding:12px}.metric{background:#0b1926;border:1px solid #1d3447;border-radius:11px;padding:10px}.metric span{display:block;color:var(--muted);font-size:11px}.metric strong{display:block;font-size:19px;margin-top:3px;font-variant-numeric:tabular-nums}.metric small{font-size:10px;color:var(--muted)}.controls{padding:14px 15px;display:grid;gap:15px}.field{display:grid;gap:7px}.field-top{display:flex;justify-content:space-between;align-items:center;gap:8px}.field label{font-size:12px;color:#c8d9e6}.value{font-size:12px;color:var(--cyan);font-variant-numeric:tabular-nums}input[type=range]{width:100%;accent-color:var(--cyan)}.switches{display:grid;gap:8px}.toggle{display:flex;align-items:center;gap:9px;color:#c6d7e4;font-size:12px}.toggle input{accent-color:var(--cyan);width:16px;height:16px}.actions{display:flex;gap:8px;flex-wrap:wrap}.status{margin:0 12px 12px;border:1px solid #234256;background:#0b1b29;padding:11px;border-radius:10px;font-size:12px;color:#bfd0de}.status strong{color:var(--green)}.status.warn{border-color:#7d582c}.status.warn strong{color:var(--orange)}.status.fault{border-color:#7d2e42}.status.fault strong{color:var(--red)}.explain{padding:14px 16px;border-top:1px solid var(--line)}.explain h3{font-size:12px;margin:0 0 6px}.explain p{font-size:12px;color:#a9bfce;margin:0}.scope-head{padding:12px 15px;display:flex;justify-content:space-between;align-items:center}.footer-note{font-size:11px;color:#71899b;padding:15px 2px 5px}.kbd{border:1px solid #294457;border-radius:5px;padding:1px 5px;color:#a8c6d9}
+@media(max-width:820px){.wrap{padding:12px}.layout{grid-template-columns:1fr}.canvas-wrap{min-height:290px}#circuit{height:320px}header{align-items:flex-start}.tag{max-width:135px;white-space:normal;text-align:center}.metrics{padding:10px}.metric strong{font-size:17px}}
+@media(prefers-reduced-motion:reduce){*{scroll-behavior:auto}}
+</style>
+</head>
+<body><div class="wrap">
+<header><div class="brand"><div class="logo">ϟ</div><div><h1>ELECTRON LOGIC</h1><p>Circuit Lab · prototipe interaktif v0.1</p></div></div><span class="tag">MODEL EDUKASI · BUKAN SPICE</span></header>
+<div class="layout">
+<main>
+<section class="panel"><div class="panel-head"><div><h2>Visualisasi rangkaian</h2><div class="sub" id="circuitSubtitle">Sumber DC · resistor · LED</div></div><select id="scenario" aria-label="Pilih contoh rangkaian"><option value="led">DC + resistor + LED</option><option value="rc">Kapasitor RC</option><option value="555">Timer NE555 astable</option></select></div>
+<div class="canvas-wrap"><span class="canvas-label">LIVE PARTICLE / CIRCUIT VIEW</span><canvas id="circuit" aria-label="Visualisasi rangkaian animasi"></canvas></div>
+<div class="legend"><span><i class="dot" style="background:var(--green)"></i>Aliran model normal</span><span><i class="dot" style="background:var(--orange)"></i>Gangguan dimodelkan</span><span><i class="dot" style="background:var(--red)"></i>Fault terdeteksi</span><span><i class="dot" style="background:var(--blue)"></i>Muatan/kapasitor</span></div>
+<div class="metrics"><div class="metric"><span>Arus model</span><strong id="current">8.0 mA</strong><small id="currentHint">DC steady-state</small></div><div class="metric"><span>Tegangan output</span><strong id="voltage">3.0 V</strong><small id="voltageHint">perkiraan model</small></div><div class="metric"><span>Status</span><strong id="statusMetric" style="color:var(--green)">NORMAL</strong><small id="statusHint">dalam batas demo</small></div></div>
+</section>
+<section class="panel" style="margin-top:14px"><div class="scope-head"><div><h2>Signal scope</h2><div class="sub" id="scopeSubtitle">Tegangan output terhadap waktu simulasi</div></div><span class="sub" id="timeLabel">t = 0.0 s</span></div><canvas id="scope" aria-label="Grafik tegangan terhadap waktu"></canvas><div class="explain"><h3 id="explainTitle">Apa yang sedang terjadi?</h3><p id="explainText">Arus konvensional dan gerak elektron berlawanan arah. Partikel pada gambar adalah visualisasi konseptual; hitungan arus berasal dari model demo sederhana.</p></div></section>
+</main>
+<aside>
+<section class="panel"><div class="panel-head"><div><h2>Lab controls</h2><div class="sub">Ubah parameter dan amati dampaknya</div></div></div>
+<div class="controls">
+<div class="field"><div class="field-top"><label for="supply">Tegangan sumber</label><span class="value" id="supplyVal">5.0 V</span></div><input id="supply" type="range" min="1" max="12" step=".5" value="5"></div>
+<div class="field" id="resField"><div class="field-top"><label for="resistance">Resistansi</label><span class="value" id="resVal">330 Ω</span></div><input id="resistance" type="range" min="100" max="2200" step="10" value="330"></div>
+<div class="field" id="noiseField"><div class="field-top"><label for="noise">Amplitudo gangguan</label><span class="value" id="noiseVal">0.15 V</span></div><input id="noise" type="range" min="0" max="1" step=".05" value=".15"></div>
+<div class="switches"><label class="toggle"><input id="noiseOn" type="checkbox"> Aktifkan sumber noise demonstrasi</label><label class="toggle"><input id="shortOn" type="checkbox"> Simulasikan short circuit</label><label class="toggle"><input id="running" type="checkbox" checked> Jalankan animasi</label></div>
+<div class="actions"><button class="primary" id="reset">↺ Reset simulasi</button><button id="clearNoise">Matikan noise</button></div>
+</div>
+<div class="status" id="statusBox"><strong>NORMAL</strong><div id="statusText">Belum ada fault yang disisipkan.</div></div>
+<div class="explain"><h3>Model yang dipakai</h3><p id="modelText">LED: pendekatan DC kasar dengan tegangan maju tetap. Belum menghitung suhu, toleransi, atau model SPICE.</p></div>
+</section>
+<section class="panel" style="margin-top:14px"><div class="panel-head"><div><h2>Prinsip visual</h2><div class="sub">Warna bukan pengganti pengukuran</div></div></div><div class="explain" style="border-top:0"><p><b style="color:var(--green)">Hijau</b> = arus model yang wajar. <b style="color:var(--orange)">Oranye</b> = gangguan tambahan yang sengaja disisipkan. <b style="color:var(--red)">Merah</b> = kondisi fault yang terdeteksi, bukan sinonim noise. <b style="color:var(--blue)">Biru</b> = muatan/medan konseptual pada kapasitor. Animasi tidak mengklaim melacak elektron individual sungguhan.</p></div></section>
+</aside>
+</div>
+<div class="footer-note">Prototipe awal untuk menguji pengalaman visual. Belum merupakan solver rangkaian umum, belum memodelkan noise termal/shot noise secara fisik, dan belum menghasilkan APK Android.</div>
+</div>
+<script>
+(()=>{'use strict';
+const $=id=>document.getElementById(id);
+const circuit=$('circuit'), scope=$('scope'), cx=circuit.getContext('2d'), sx=scope.getContext('2d');
+let time=0,last=0,raf=0,history=[],particles=[],noisePhase=0;
+const C={bg:'#07111b',wire:'#3b657a',green:'#53f0a2',orange:'#ffb454',red:'#ff596b',blue:'#70a9ff',cyan:'#4ce2ee',muted:'#8da7bb',text:'#e7f2fb'};
+function resizeCanvas(c,ctx){const r=c.getBoundingClientRect(),d=Math.min(window.devicePixelRatio||1,2);c.width=Math.max(1,Math.round(r.width*d));c.height=Math.max(1,Math.round(r.height*d));ctx.setTransform(d,0,0,d,0,0);return {w:r.width,h:r.height};}
+function state(){const v=+$('supply').value,r=+$('resistance').value,n=+$('noise').value,noise=$('noiseOn').checked,short=$('shortOn').checked,mode=$('scenario').value;
+ let current=0,out=0,cap=0,period=0,frequency=0,kind='NORMAL',color=C.green;
+ const perturb=noise? n*(Math.sin(time*17)+.45*Math.sin(time*31+1.2)) :0;
+ if(short){current=v/2;out=v;kind='SHORT CIRCUIT';color=C.red;}
+ else if(mode==='led'){current=Math.max(0,(v-2)/r)*1000;out=Math.max(0,v-current*r/1000);if(noise)out+=perturb; if(current>30){kind='ARUS TINGGI';color=C.red;}}
+ else if(mode==='rc'){const tau=r*.001;cap=v*(1-Math.exp(-(time%Math.max(.2,tau*5))/tau));out=cap+(noise?perturb:0);current=(v-cap)/r*1000;if(noise)kind='NOISE AKTIF';}
+ else {period=1.4*(r/330);frequency=1/Math.max(.01,period);out=(time%period)<period/2?v:0;if(noise)out=Math.max(0,Math.min(v,out+perturb));current=out/r*1000;if(noise)kind='NOISE AKTIF';}
+ if(noise&&!short&&kind==='NORMAL')kind='NOISE AKTIF';
+ return {v,r,n,noise,short,mode,current,out,cap,period,frequency,perturb,kind,color};
+}
+function fitText(ctx,t,x,y,max){if(ctx.measureText(t).width>max){while(t.length&&ctx.measureText(t+'…').width>max)t=t.slice(0,-1);t+='…'}ctx.fillText(t,x,y)}
+function line(ctx,pts,color,width=3){ctx.beginPath();ctx.moveTo(pts[0][0],pts[0][1]);for(let i=1;i<pts.length;i++)ctx.lineTo(pts[i][0],pts[i][1]);ctx.strokeStyle=color;ctx.lineWidth=width;ctx.lineJoin='round';ctx.stroke()}
+function label(ctx,t,x,y,color=C.muted,size=11){ctx.fillStyle=color;ctx.font='12px system-ui';ctx.fontSize=size;ctx.fillText(t,x,y)}
+function resistor(ctx,x,y,color){ctx.strokeStyle=color;ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(x-37,y);ctx.lineTo(x-28,y);ctx.lineTo(x-21,y-9);ctx.lineTo(x-10,y+9);ctx.lineTo(x,y-9);ctx.lineTo(x+10,y+9);ctx.lineTo(x+21,y-9);ctx.lineTo(x+28,y);ctx.lineTo(x+37,y);ctx.stroke()}
+function battery(ctx,x,y,color,v){line(ctx,[[x,y-22],[x,y+22]],color,3);line(ctx,[[x-10,y-9],[x+10,y-9]],color,3);line(ctx,[[x-6,y+5],[x+6,y+5]],color,3);label(ctx,'+',x+13,y-9,C.text);label(ctx,'−',x+13,y+10,C.text);label(ctx,v.toFixed(1)+' V',x-19,y+42,C.cyan)}
+function drawCircuit(s,dt){const {w,h}=resizeCanvas(circuit,cx);cx.clearRect(0,0,w,h);const left=w*.17,right=w*.82,top=h*.25,bottom=h*.76,mid=(left+right)/2;const wire=s.short?C.red:C.wire;
+ cx.lineCap='round';line(cx,[[left,top],[mid-40,top]],wire);line(cx,[[mid+40,top],[right,top],[right,bottom],[left,bottom],[left,top]],wire);
+ battery(cx,left,mid*.0+((top+bottom)/2),wire,s.v);
+ if(s.mode==='led'){
+ resistor(cx,mid,top,wire);label(cx,s.r+' Ω',mid-22,top-20,C.text);cx.beginPath();cx.arc(right,top,12,0,Math.PI*2);cx.fillStyle=s.current>0?C.green:'#1a2e3e';cx.fill();cx.strokeStyle=s.short?C.red:C.cyan;cx.lineWidth=2;cx.stroke();label(cx,'LED',right-13,top-23,C.text);
+ label(cx,'Rangkaian DC',left+6,bottom+25,C.muted);label(cx,'Arus model: '+s.current.toFixed(2)+' mA',mid-65,bottom+45,C.cyan);
+ } else if(s.mode==='rc'){
+ resistor(cx,mid,top,wire);label(cx,s.r+' Ω',mid-22,top-20,C.text);const capX=right,capY=(top+bottom)/2;line(cx,[[capX-14,capY-12],[capX+14,capY-12]],C.blue,4);line(cx,[[capX-14,capY+12],[capX+14,capY+12]],C.blue,4);
+ for(let i=0;i<8;i++){const yy=capY-7+i*2;cx.fillStyle=i%2?C.blue:'#c6e2ff';cx.beginPath();cx.arc(capX-7,yy,2,0,Math.PI*2);cx.fill();cx.beginPath();cx.arc(capX+7,yy,2,0,Math.PI*2);cx.fill()}
+ label(cx,'Kapasitor C',capX-37,capY+34,C.blue);label(cx,'Vc = '+s.out.toFixed(2)+' V',mid-33,bottom+30,C.cyan);label(cx,'Muatan konseptual pada pelat',left+6,bottom+49,C.muted);
+ } else {
+ resistor(cx,mid,top,wire);label(cx,'RA + RB',mid-22,top-20,C.text);const chipX=right,chipY=(top+bottom)/2;
+ cx.fillStyle='#112b3d';cx.strokeStyle=C.cyan;cx.lineWidth=2;cx.beginPath();cx.roundRect(chipX-37,chipY-39,74,78,7);cx.fill();cx.stroke();label(cx,'NE555',chipX-20,chipY+4,C.text);label(cx,'2/3 VCC',chipX-27,chipY-49,C.blue);label(cx,'1/3 VCC',chipX-27,chipY+55,C.blue);label(cx,'OUT',mid-12,bottom+28,C.cyan);label(cx,'f ≈ '+s.frequency.toFixed(2)+' Hz*',left+7,bottom+48,C.muted);
+ }
+ // flow particles are illustrative carriers/markers, never claims of individually solved electrons
+ if(s.running){const speed=Math.min(2.5,.35+Math.abs(s.current)*.07);for(let i=0;i<18;i++){const p=(time*speed*.14+i/18)%1;let x,y;if(p<.25){x=left+(right-left)*p*4;y=top}else if(p<.5){x=right;y=top+(bottom-top)*(p-.25)*4}else if(p<.75){x=right-(right-left)*(p-.5)*4;y=bottom}else{x=left;y=bottom-(bottom-top)*(p-.75)*4}
+ const isFault=s.short&&p>.1&&p<.92,isNoise=s.noise&&i%5===0;cx.beginPath();cx.arc(x,y,isFault?3.7:2.6,0,Math.PI*2);cx.fillStyle=isFault?C.red:isNoise?C.orange:C.green;cx.shadowColor=cx.fillStyle;cx.shadowBlur=8;cx.fill();cx.shadowBlur=0;}
+ }
+ if(s.noise){cx.strokeStyle=C.orange;cx.lineWidth=1.5;cx.setLineDash([4,5]);cx.beginPath();cx.moveTo(mid,top+13);cx.quadraticCurveTo(mid+35,top+45,mid+60,top+23);cx.stroke();cx.setLineDash([]);label(cx,'gangguan injeksi',mid+8,top+51,C.orange)}
+ if(s.short){cx.strokeStyle=C.red;cx.lineWidth=5;cx.beginPath();cx.moveTo(left+32,top+5);cx.lineTo(left+32,bottom-5);cx.stroke();label(cx,'FAULT',left+42,top+22,C.red)}
+}
+function drawScope(s){const {w,h}=resizeCanvas(scope,sx);sx.clearRect(0,0,w,h);const pad={l:35,r:12,t:12,b:22},gw=w-pad.l-pad.r,gh=h-pad.t-pad.b;
+ sx.strokeStyle='#1c3548';sx.lineWidth=1;for(let i=0;i<=4;i++){const y=pad.t+gh*i/4;sx.beginPath();sx.moveTo(pad.l,y);sx.lineTo(w-pad.r,y);sx.stroke()}for(let i=0;i<=6;i++){const x=pad.l+gw*i/6;sx.beginPath();sx.moveTo(x,pad.t);sx.lineTo(x,h-pad.b);sx.stroke()}
+ sx.fillStyle=C.muted;sx.font='10px system-ui';sx.fillText('V',7,16);sx.fillText('waktu →',w-62,h-5);
+ const max=Math.max(1,s.v*1.15),min=-.2;sx.strokeStyle=s.short?C.red:s.noise?C.orange:C.cyan;sx.lineWidth=2;sx.beginPath();
+ for(let i=0;i<history.length;i++){const x=pad.l+gw*i/Math.max(1,history.length-1),y=pad.t+gh*(1-(history[i]-min)/(max-min));if(i===0)sx.moveTo(x,y);else sx.lineTo(x,y)}sx.stroke();
+ sx.fillStyle=C.muted;sx.fillText(max.toFixed(1),5,pad.t+4);sx.fillText('0',18,pad.t+gh);
+}
+function updateUI(s){$('supplyVal').textContent=s.v.toFixed(1)+' V';$('resVal').textContent=s.r+' Ω';$('noiseVal').textContent=s.n.toFixed(2)+' V';$('current').textContent=s.current.toFixed(2)+(s.current>1?' mA':' mA');$('voltage').textContent=s.out.toFixed(2)+' V';$('statusMetric').textContent=s.kind;$('statusMetric').style.color=s.color;$('currentHint').textContent=s.short?'estimasi jalur short':s.mode==='rc'?'arus pengisian model':s.mode==='555'?'nilai sesaat model':'DC steady-state';$('voltageHint').textContent=s.noise?'termasuk gangguan injeksi':'perkiraan model';$('statusHint').textContent=s.short?'fault disisipkan':s.noise?'noise demonstrasi aktif':'dalam batas demo';
+ const box=$('statusBox');box.className='status'+(s.short?' fault':s.noise?' warn':'');box.innerHTML='<strong>'+s.kind+'</strong><div>'+ (s.short?'Jalur short disisipkan untuk demonstrasi; arus dibatasi model ilustratif.':s.noise?'Sumber gangguan matematis ditambahkan ke sinyal terukur. Ini bukan thermal/shot noise fisik.':'Belum ada fault yang disisipkan.')+'</div>';
+ $('circuitSubtitle').textContent=s.mode==='led'?'Sumber DC · resistor · LED':s.mode==='rc'?'Sumber DC · resistor · kapasitor':'Model timer astable konseptual';$('scopeSubtitle').textContent=s.mode==='555'?'Gelombang output konseptual NE555':'Tegangan output terhadap waktu simulasi';
+ $('explainTitle').textContent=s.short?'Hubungan singkat terdeteksi (disisipkan)':s.noise?'Gangguan sedang ditambahkan':'Apa yang sedang terjadi?';
+ $('explainText').textContent=s.short?'Merah menandai fault yang sengaja diaktifkan. Short circuit bukan noise; pada rangkaian nyata arus bergantung pada impedansi sumber dan proteksi.':s.noise?'Oranye menandai sinyal gangguan tambahan. Noise tidak berarti elektron keluar jalur: model ini menyuntikkan variasi ke sinyal, bukan mensimulasikan gerak acak pembawa muatan.':s.mode==='rc'?'Kapasitor menyimpan energi pada medan listrik. Muatan berlawanan terkumpul pada kedua pelat; elektron tidak menembus dielektrik ideal. Kurva RC ini memakai model pengisian sederhana.':s.mode==='555'?'Demo ini menggambarkan keluaran astable secara konseptual. Belum menghitung komparator, transistor internal, toleransi komponen, atau jitter SPICE.':'Arus konvensional berlawanan arah dengan gerak elektron di konduktor logam. Titik hijau adalah penanda visual konseptual, bukan pelacakan elektron individual.';
+ $('modelText').textContent=s.mode==='led'?'LED: pendekatan DC kasar dengan tegangan maju tetap. Belum menghitung suhu, toleransi, atau model SPICE.':s.mode==='rc'?'RC: kapasitor ideal dengan kurva pengisian eksponensial sederhana. Belum ada solver jaringan umum atau ESR/leakage.':'NE555: gelombang astable konseptual; frekuensi memakai perkiraan demonstrasi. Bukan model transistor internal atau datasheet-accurate.';
+}
+function frame(ts){if(!last)last=ts;const dt=Math.min(.05,(ts-last)/1000);last=ts;const s=state();s.running=$('running').checked;if(s.running)time+=dt;const sample=s.out;if(s.running){history.push(sample);if(history.length>180)history.shift()}drawCircuit(s,dt);drawScope(s);updateUI(s);$('timeLabel').textContent='t = '+time.toFixed(1)+' s';raf=requestAnimationFrame(frame)}
+['supply','resistance','noise','scenario','noiseOn','shortOn','running'].forEach(id=>$(id).addEventListener('input',()=>{if(id==='scenario'){time=0;history=[];}if(id==='noiseOn'&&!$('noiseOn').checked){} }));
+$('reset').addEventListener('click',()=>{time=0;history=[];$('shortOn').checked=false;$('noiseOn').checked=false;$('supply').value=5;$('resistance').value=330;$('noise').value=.15;$('running').checked=true;});
+$('clearNoise').addEventListener('click',()=>{$('noiseOn').checked=false;$('noise').value=0;});
+window.addEventListener('resize',()=>{drawCircuit({...state(),running:false},0);drawScope(state())});
+document.addEventListener('visibilitychange',()=>{last=0});
+raf=requestAnimationFrame(frame);
+})();
+</script></body></html>
