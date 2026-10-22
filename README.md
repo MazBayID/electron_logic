@@ -1,118 +1,145 @@
 # Electron Logic ⚡
 
-> **Electron Logic** adalah proyek aplikasi Android (APK) untuk membangun, mengubah, dan menjalankan simulasi rangkaian elektronik secara visual.
+> **Build the circuit. See what happens. Understand why.**  
+> Simulator elektronika yang berfokus pada perakitan rangkaian, visualisasi perilaku listrik, dan penjelasan fisika yang transparan.
 
-Bayangkan sebuah meja kerja elektronik virtual di ponsel: kita bisa menempatkan komponen, menghubungkannya dengan kabel, mengubah nilai komponennya, lalu menjalankan simulasi untuk melihat bagaimana rangkaian merespons. Tujuan proyek ini adalah memberi kebebasan untuk bereksperimen tanpa harus selalu memiliki komponen fisik di tangan.
+Electron Logic ditujukan sebagai aplikasi Android untuk membangun rangkaian secara bebas, mengubah nilai komponen, menjalankan simulasi, serta memahami arus, tegangan, penyimpanan muatan, gangguan, dan fault. Animasi harus mengikuti hasil model—bukan sekadar terlihat meyakinkan.
 
-## 🎯 Visi Proyek
+## 🚀 Coba prototipe sekarang
 
-Membuat simulator elektronik interaktif yang memungkinkan pengguna merakit rangkaian sesuka hati dan mengamati perilaku listriknya—mulai dari rangkaian sederhana hingga eksperimen yang lebih kompleks.
+Repository ini sekarang menyertakan prototipe web interaktif:
 
-Simulasi akan dikembangkan secara bertahap. Visualisasi gerak elektron, arus, tegangan, dan respons komponen harus mengikuti model simulasi yang sesuai; animasi yang menarik tidak boleh disalahartikan sebagai pengukuran fisik yang akurat jika modelnya belum mendukung hal tersebut.
+- Buka **[Circuit Lab — index.html](./index.html)**.
+- Pilih demo **DC + resistor + LED**, **RC**, atau **NE555 astable konseptual**.
+- Ubah tegangan dan resistansi; aktifkan sumber noise demonstrasi atau short circuit untuk melihat perbedaan tampilan normal, gangguan, dan fault.
+- Amati visualisasi rangkaian, nilai model, status, dan grafik sinyal.
 
-## 🧩 Komponen yang Direncanakan
+Untuk menjalankannya, unduh repository lalu buka `index.html` di browser modern. File ini tidak membutuhkan package manager atau server. Agar dapat dibuka sebagai situs, GitHub Pages dapat diaktifkan melalui **Settings → Pages** pada repository.
 
-Pustaka komponen akan diperluas secara bertahap, termasuk:
+**Penting:** ini prototipe antarmuka dan model edukasi sederhana, bukan aplikasi Android/APK dan bukan solver rangkaian umum. Noise yang diaktifkan saat ini adalah sinyal demonstrasi deterministik, bukan simulasi thermal noise atau shot noise fisik. Model dan batasannya dijelaskan di **[docs/physics-model.md](./docs/physics-model.md)**.
 
-- **Sumber daya:** baterai, catu daya DC, ground, dan sumber sinyal.
-- **Komponen pasif:** resistor, kapasitor, kapasitor elektrolit (elco), induktor, potensiometer, dan sakelar.
-- **Komponen optik:** LED, dioda biasa, dan komponen terkait.
-- **Semikonduktor:** transistor BJT, MOSFET, serta dioda khusus.
-- **Sirkuit terpadu (IC):** IC logika, timer, op-amp, regulator tegangan, dan komponen lain sesuai kemampuan simulator.
-- **Koneksi:** kabel, simpul, terminal, serta konektor untuk menyusun rangkaian.
+## 🧭 Arah produk
 
-Setiap komponen idealnya memiliki properti yang dapat diedit, seperti nilai resistansi atau kapasitansi, polaritas, tipe komponen, dan parameter lain yang relevan.
+Electron Logic ingin menggabungkan tiga hal yang sering terpisah:
 
-## 🛠️ Pengalaman Merakit
+1. **Merakit dengan bebas** — kanvas rangkaian, kabel, simpul, pin, dan parameter yang dapat diedit.
+2. **Melihat perilaku listrik** — tegangan, arus, pengisian kapasitor, sinyal IC, dan visualisasi partikel yang konsisten dengan model.
+3. **Memahami penyebabnya** — alat ukur, grafik, indikator gangguan/fault, dan penjelasan tentang apa yang terjadi serta mengapa.
 
-Arah pengalaman pengguna yang ingin dicapai:
+Prinsip produk: **visualisasi tidak boleh berpura-pura menjadi pengukuran fisika.** Jika mesin simulasi belum menghitung suatu efek, UI harus menyebutnya sebagai ilustrasi atau fitur yang belum didukung.
 
-1. Menambahkan komponen ke kanvas dengan memilih atau menyeretnya dari panel komponen.
-2. Memindahkan, memutar, menghapus, dan menyusun ulang komponen.
-3. Menghubungkan pin komponen menggunakan kabel dan simpul.
-4. Membuka panel properti untuk mengubah nilai dan konfigurasi komponen.
-5. Menjalankan, menjeda, melanjutkan, mengulang, atau mereset simulasi.
-6. Mengamati perubahan tegangan, arus, status LED, dan visualisasi elektron sesuai model simulasi.
-7. Menyimpan rangkaian, membuka kembali proyek, serta membuat variasi dari rangkaian yang sama.
+## 🎨 Sistem visualisasi
 
-Antarmuka dirancang agar nyaman digunakan di layar ponsel, dengan kontrol sentuh, zoom, dan kanvas yang mudah dinavigasi.
+Mode visualisasi direncanakan dapat dinyalakan secara terpisah:
 
-## ⚡ Tujuan Simulasi
+- **Particle / Current View:** penanda aliran pada jalur berdasarkan hasil arus. Bedakan arah arus konvensional dengan arah gerak elektron; jangan mengklaim melacak elektron individual bila model tidak melakukannya.
+- **Charge Storage View:** muatan pada kedua pelat kapasitor dan perubahan medan listrik. Untuk kapasitor ideal, jangan menggambar elektron menembus dielektrik.
+- **Noise View:** tandai sumber gangguan, jalur kopling, dan dampak pada sinyal. Noise tidak selalu berarti elektron salah jalur.
+- **Fault View:** sorot kondisi yang terdeteksi model, misalnya short circuit, arus berlebihan, polaritas salah, atau operasi di luar batas komponen.
+- **Signal / Logic View:** tampilkan bentuk gelombang, status pin, blok internal, dan keadaan logika IC sesuai model yang benar-benar tersedia.
 
-Electron Logic tidak hanya ingin menggambar komponen. Tujuan akhirnya adalah menghubungkan tampilan visual dengan perilaku rangkaian.
+### Bahasa warna awal
 
-Contoh eksperimen yang dapat dikembangkan:
+| Warna | Makna UI yang diusulkan |
+|---|---|
+| 🟢 Hijau | Aliran/operasi model dalam kondisi normal |
+| 🟠 Oranye | Gangguan yang diinjeksi atau terdeteksi |
+| 🔴 Merah | Fault atau kondisi di luar batas yang dikenali model |
+| 🔵 Biru | Muatan/medan atau keadaan kapasitor konseptual |
+| Sian | Sinyal, koneksi terpilih, atau nilai pengukuran |
 
-- Mengamati arus pada rangkaian resistor dan perubahan akibat nilai resistansi.
-- Melihat proses pengisian dan pengosongan kapasitor atau elco.
-- Mengamati LED menyala atau padam berdasarkan kondisi rangkaian dan polaritas.
-- Mempelajari transistor sebagai sakelar atau penguat melalui model yang sesuai.
-- Merangkai beberapa komponen menjadi rangkaian yang lebih besar.
-- Memeriksa tegangan dan arus pada titik-titik rangkaian serta menemukan koneksi yang keliru.
+Warna adalah petunjuk visual, bukan pengganti angka, satuan, atau penjelasan. Noise dan short circuit adalah fenomena berbeda.
 
-**Catatan ilmiah:** arah gerak elektron dan arah arus konvensional berlawanan. Simulator perlu membedakan keduanya dengan jelas. Model sederhana dapat digunakan untuk tahap awal, sedangkan analisis yang lebih realistis—misalnya respons transien kapasitor, karakteristik transistor, dan perilaku IC—ditambahkan secara bertahap.
+## 🔬 Fisika dan noise
+
+Noise bisa berasal dari proses fisik pembawa muatan (misalnya thermal noise dan shot noise), gangguan catu daya, interferensi elektromagnetik, atau kopling antarsinyal. Efek tersebut tidak selalu terlihat sebagai elektron yang berpindah ke jalur yang salah.
+
+- **Resistor:** tunjukkan arus, jatuh tegangan, dan daya; jangan menyiratkan bahwa elektron seperti mobil yang melambat di resistor.
+- **Kapasitor:** muatan terakumulasi pada pelat; arus dan tegangan berubah saat pengisian/pengosongan.
+- **NE555 pin 5:** pin CONTROL VOLTAGE mengubah ambang internal. Gangguan di sana dapat mengubah timing, tetapi pin 5 bukan generator noise dengan sendirinya.
+- **Short circuit:** tampilkan jalur fault dan nilai arus/tegangan dari model. Jangan menyebut short sebagai noise.
+- **Noise fisik:** thermal noise, shot noise, dan jitter harus dihitung dengan metode/model yang sesuai. Menggambar gelombang acak saja tidak cukup.
+
+## 🧩 Komponen yang direncanakan
+
+### Fondasi
+- Sumber tegangan DC, ground, resistor, LED, sakelar, kabel, simpul, terminal.
+- Kapasitor biasa dan elektrolit, potensiometer, dioda, induktor.
+- Probe tegangan, ammeter, multimeter, dan osiloskop sederhana.
+
+### Semikonduktor dan IC
+- BJT NPN/PNP (contoh BC547/BC557), MOSFET dan dioda dengan model yang sesuai.
+- Gerbang logika, 74HC595, NE555, LM358, CD4017, regulator dan driver motor.
+- Tampilan pin, status tegangan/logika, diagram blok internal, dan detail semikonduktor hanya ketika model mendukungnya.
+
+Daftar ini adalah sasaran bertahap, bukan klaim bahwa semua komponen sudah tersedia.
 
 ## 🗺️ Roadmap
 
-### Tahap 1 — Fondasi
-- [ ] Menentukan platform Android dan struktur proyek.
-- [ ] Membuat kanvas rangkaian yang dapat diperbesar dan digeser.
-- [ ] Menambahkan, memilih, memindahkan, memutar, dan menghapus komponen.
-- [ ] Membuat sistem pin, kabel, dan koneksi yang valid.
+### Tahap 0 — Prototipe interaksi
+- [x] Prototipe web awal dengan pilihan demo, kontrol parameter, animasi, metrik, dan grafik.
+- [x] Toggle demonstrasi gangguan dan short circuit.
+- [x] Dokumentasi asumsi dan batasan model.
+- [ ] Validasi prototipe di berbagai ukuran layar dan browser.
+- [ ] Tambahkan tes otomatis untuk persamaan demo.
 
-### Tahap 2 — Komponen Dasar
-- [ ] Sumber tegangan DC dan ground.
-- [ ] Resistor dengan nilai yang dapat diedit.
-- [ ] Sakelar dan LED.
-- [ ] Pemeriksaan rangkaian terbuka dan hubungan singkat dasar.
+### Tahap 1 — Fondasi simulator
+- [ ] Menetapkan struktur proyek Android dan arsitektur engine.
+- [ ] Kanvas yang dapat di-zoom/pan dan komponen yang dapat ditempatkan, dipindahkan, diputar, serta dihapus.
+- [ ] Model pin, kabel, node, validasi koneksi, undo/redo.
+- [ ] Simpan/buka proyek.
 
-### Tahap 3 — Mesin Simulasi
-- [ ] Menghitung tegangan dan arus pada rangkaian dasar.
-- [ ] Memvisualisasikan aliran arus dan gerak elektron secara konsisten dengan model yang digunakan.
-- [ ] Menampilkan status dan nilai simulasi secara langsung.
-- [ ] Menambahkan kontrol mulai, jeda, langkah, dan reset.
+### Tahap 2 — Mesin rangkaian
+- [ ] Solver DC untuk jaringan resistor/sumber yang didukung.
+- [ ] Model diode/LED dan deteksi rangkaian terbuka atau short berdasarkan konektivitas.
+- [ ] Solver transient untuk RC, kondisi awal, dan pengukuran.
+- [ ] Tes numerik yang dapat direproduksi dan pesan kesalahan yang jelas.
 
-### Tahap 4 — Komponen Dinamis
-- [ ] Kapasitor dan elco, termasuk proses pengisian/pengosongan.
-- [ ] Dioda dan karakteristik LED yang lebih baik.
-- [ ] Transistor BJT dan MOSFET dengan model yang sesuai.
-- [ ] Induktor dan komponen tambahan.
+### Tahap 3 — Visualisasi berbasis hasil model
+- [ ] Partikel/penanda arus terhubung dengan besar dan arah arus hasil solver.
+- [ ] Muatan pelat kapasitor dan grafik pengisian/pengosongan.
+- [ ] Probe, grafik tegangan/arus, serta penjelasan sebab-akibat.
+- [ ] Mode normal, noise, dan fault yang terpisah dengan jelas.
 
-### Tahap 5 — IC dan Rangkaian Kompleks
-- [ ] Menambahkan IC berdasarkan model atau fungsi yang terdokumentasi.
-- [ ] Mendukung rangkaian gabungan dan subrangkaian.
-- [ ] Menambahkan alat ukur virtual seperti voltmeter dan ammeter.
-- [ ] Menyediakan contoh rangkaian dan panduan belajar.
+### Tahap 4 — Noise dan komponen aktif
+- [ ] Sumber gangguan eksternal yang dapat dikonfigurasi.
+- [ ] Model thermal noise/shot noise jika engine mendukungnya.
+- [ ] Transistor dengan model terdokumentasi dan pemeriksaan batas operasi.
+- [ ] NE555 dan IC logika melalui model tervalidasi.
 
-### Tahap 6 — Proyek dan Personalisasi
-- [ ] Menyimpan dan memuat rangkaian.
-- [ ] Duplikasi rangkaian dan komponen buatan pengguna jika memungkinkan.
-- [ ] Undo/redo.
-- [ ] Tema, pengaturan tampilan, serta peningkatan kenyamanan penggunaan.
+### Tahap 5 — Aplikasi Android dan pengalaman belajar
+- [ ] UI Android mobile-first.
+- [ ] Tutorial eksperimen, contoh rangkaian, dan panel analisis.
+- [ ] Kustomisasi tema, kecepatan animasi, warna kabel, dan tampilan.
+- [ ] Ekspor/impor dan berbagi proyek.
 
-Roadmap ini adalah rencana awal, bukan klaim bahwa fitur-fitur tersebut sudah tersedia. Status akan diperbarui seiring implementasi dan pengujian.
+## 🏗️ Arsitektur yang dituju
 
-## 🧪 Prinsip Pengembangan
+Pisahkan empat lapisan agar visualisasi tidak menjadi pengganti mesin simulasi:
 
-- **Eksperimen bebas:** pengguna dapat merangkai dan memodifikasi rangkaian tanpa dibatasi pada contoh tetap.
-- **Modular:** komponen baru dapat ditambahkan tanpa harus menulis ulang seluruh aplikasi.
-- **Interaktif:** perubahan nilai atau koneksi harus tercermin pada hasil simulasi.
-- **Transparan:** jelaskan asumsi model, batasan simulasi, dan kondisi rangkaian yang tidak valid.
-- **Mobile-first:** kontrol dan kanvas dioptimalkan untuk Android.
-- **Bertahap dan dapat diuji:** setiap fitur diperiksa sebelum dianggap selesai.
+1. **Circuit Editor** — komponen, pin, kabel, properti, proyek.
+2. **Simulation Engine** — solver DC/transient dan model komponen.
+3. **Analysis Engine** — pengukuran, grafik, noise, serta deteksi fault.
+4. **Visual Engine** — animasi partikel, medan, warna, dan diagram yang membaca hasil model.
 
-## ⚠️ Batasan dan Keselamatan
+UI Android direncanakan memakai Kotlin/Jetpack Compose. Prototipe web saat ini berdiri sendiri dan berfungsi sebagai percobaan interaksi awal, bukan fondasi solver final yang sudah tervalidasi.
 
-Electron Logic adalah simulator perangkat lunak. Hasil simulasi tidak menjamin rangkaian fisik akan bekerja identik, terutama jika model komponen masih disederhanakan. Jangan menggunakan hasilnya sebagai satu-satunya dasar untuk desain yang berisiko, dan jangan menghubungkan perangkat fisik ke rangkaian berbahaya berdasarkan simulasi saja.
+## 🧪 Prinsip pengembangan
 
-## 📦 Status Proyek
+- **Eksperimen bebas:** rangkaian dapat disusun dan dimodifikasi, bukan hanya memilih gambar rangkaian jadi.
+- **Fisikanya transparan:** asumsi, satuan, dan batas model selalu dapat diketahui.
+- **Model lebih dahulu, animasi kemudian:** visualisasi membaca hasil simulasi.
+- **Tidak mengarang data:** nilai pengukuran harus berasal dari model; ilustrasi harus diberi label.
+- **Bertahap dan dapat diuji:** fitur belum dianggap selesai sebelum diuji.
 
-**Tahap saat ini: perencanaan dan fondasi awal.** Daftar fitur di atas menggambarkan arah pengembangan; fitur baru dianggap selesai setelah implementasi dan pengujian.
+## ⚠️ Keselamatan dan batasan
+
+Electron Logic adalah perangkat lunak edukasi. Hasil simulasi tidak menjamin rangkaian fisik akan bekerja identik, terutama bila model masih disederhanakan. Jangan gunakan prototipe ini sebagai satu-satunya dasar desain rangkaian berisiko atau untuk memutuskan sambungan perangkat fisik.
 
 ## 🤝 Kontribusi
 
-Ide komponen, contoh rangkaian, laporan bug, dan usulan peningkatan antarmuka sangat membantu. Perubahan sebaiknya dibuat secara bertahap agar mesin simulasi, visualisasi, dan antarmuka tetap konsisten.
+Saran fitur, model komponen, contoh rangkaian, laporan bug, dan hasil uji di ponsel sangat membantu. Sebelum menambah visualisasi baru, tentukan terlebih dahulu fenomena yang dimodelkan dan data yang mendukungnya.
 
 ---
 
-Dibangun dengan rasa ingin tahu—untuk menjelajahi dunia elektronika, satu rangkaian pada satu waktu. ⚡
+Dibangun dengan rasa ingin tahu — untuk memahami elektronika, satu rangkaian pada satu waktu. ⚡
