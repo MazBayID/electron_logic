@@ -1,39 +1,29 @@
 # Electron Logic ⚡
 
-**Simulator elektronika Android untuk merakit rangkaian dan memahami cara kerjanya.**
+**Simulator elektronika Android yang sedang dibangun dengan Kotlin native dan Jetpack Compose.**
 
-Electron Logic sedang dikembangkan. Saat ini repository berisi prototipe web interaktif dan aplikasi Android sederhana yang membukanya melalui WebView. Ini belum merupakan simulator rangkaian umum.
+Proyek sedang beralih dari prototipe HTML/WebView ke antarmuka Android native. Build Kotlin awal menyediakan dashboard lab, kontrol parameter demo, visual rangkaian, dan navigasi dasar. Ini belum menjadi solver rangkaian umum.
 
-## Coba prototipe
+## Unduh APK pengujian
 
-1. Unduh repository, atau buka [`index.html`](./index.html).
-2. Jalankan file tersebut di browser modern.
-3. Coba demo DC + resistor + LED, RC, dan NE555 konseptual. Ubah parameter dan amati hasil yang ditampilkan.
-
-Tidak perlu memasang package manager atau server untuk mencoba prototipe lokal.
-
-## Unduh APK Android
-
-1. Buka [Build Android debug APK di GitHub Actions](https://github.com/MazBayID/electron_logic/actions/workflows/android-debug.yml).
-2. Pilih run terbaru yang berstatus **Success**.
+1. Buka [Android Kotlin CI di GitHub Actions](https://github.com/MazBayID/electron_logic/actions/workflows/android-debug.yml).
+2. Pilih run terbaru berstatus **Success**.
 3. Di bagian **Artifacts**, unduh **electron-logic-debug-apk**.
-4. Ekstrak ZIP dan instal `app-debug.apk` di perangkat Android. Jika diminta, izinkan instalasi dari sumber yang digunakan.
+4. Ekstrak ZIP dan instal `app-debug.apk`.
 
-APK ini adalah **build debug untuk pengujian**, bukan rilis produksi. ID paketnya `com.mazbayid.electronlogic.debug`. Artifact hanya tersedia jika workflow selesai dengan sukses.
+APK ini merupakan debug build untuk pengujian, bukan rilis produksi. ID paket debug: `com.mazbayid.electronlogic.debug`. Artifact tersedia selama 14 hari setelah build.
 
-## Status saat ini
+## Status proyek
 
-- Prototipe web: demo rangkaian, kontrol parameter, grafik, dan visualisasi gangguan/fault.
-- Android: pembungkus WebView untuk menjalankan prototipe secara offline.
-- Belum tersedia: editor rangkaian bebas, solver rangkaian umum, dan model fisika lengkap untuk semua komponen.
+- **Sudah ada:** antarmuka native Kotlin/Compose, area aman Android, dashboard lab, kontrol demo tegangan/resistansi, visualisasi konseptual, serta status demo noise/fault.
+- **Belum ada:** editor rangkaian bebas, koneksi pin/kabel, penyimpanan proyek, solver DC/transient yang umum, dan model fisika tervalidasi untuk komponen aktif.
+- **Catatan model:** nilai yang tampil masih memakai pendekatan demonstrasi sederhana. Visualisasi partikel bukan pelacakan elektron individual; noise demo bukan simulasi thermal/shot noise fisik.
 
-**Catatan:** efek noise pada demo adalah ilustrasi deterministik, bukan simulasi thermal noise atau shot noise yang tervalidasi. Gangguan (noise) dan hubung singkat (short circuit) merupakan hal berbeda.
+## Rencana berikutnya
 
-## Arah pengembangan
+1. Pisahkan model rangkaian dan UI agar dapat diuji.
+2. Bangun editor komponen, pin, kabel, simpul, dan properti.
+3. Tambahkan solver DC yang diuji dengan rangkaian referensi.
+4. Kembangkan solver transient, alat ukur, grafik, dan model komponen bertahap.
 
-1. Editor untuk menempatkan komponen dan menghubungkannya dengan kabel.
-2. Solver DC dan transient dengan hasil yang dapat diuji.
-3. Pengukuran tegangan/arus, grafik, dan visualisasi yang mengikuti hasil solver.
-4. Model komponen yang lebih lengkap, termasuk transistor dan IC.
-
-Baca [catatan model fisika](./docs/physics-model.md) untuk asumsi dan batasan yang lebih rinci. Laporan bug, saran, dan hasil pengujian di perangkat Android sangat diterima.
+File `index.html` lama dipertahankan hanya sebagai referensi prototipe web; APK Android tidak lagi memuatnya. Laporan bug dan hasil pengujian di perangkat Android sangat membantu.
