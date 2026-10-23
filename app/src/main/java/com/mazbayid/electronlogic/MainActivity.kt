@@ -1,6 +1,14 @@
 package com.mazbayid.electronlogic
 
 import android.os.Bundle
+import android.graphics.Paint
+import android.graphics.Typeface
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.Canvas
@@ -16,6 +24,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
@@ -57,6 +66,16 @@ private fun NativeLab() {
         else -> Green
     }
     val status = reading.status to statusColor
+    val electronTransition = rememberInfiniteTransition(label = "electron-flow")
+    val electronPhase by electronTransition.animateFloat(
+        initialValue = 0f,
+        targetValue = 1f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(durationMillis = 2200, easing = LinearEasing),
+            repeatMode = RepeatMode.Restart
+        ),
+        label = "electron-phase"
+    )
 
     Surface(Modifier.fillMaxSize(), color = Night) {
         Column(Modifier.fillMaxSize()) {
@@ -84,7 +103,7 @@ private fun NativeLab() {
                                     }
                                     Text(status.first, color = status.second, fontSize = 11.sp)
                                 }
-                                CircuitCanvas(Modifier.fillMaxWidth().height(210.dp), noise, shortCircuit)
+                                CircuitCanvas(Modifier.fillMaxWidth().height(240.dp), noise, shortCircuit, electronPhase)
                                 Row(Modifier.fillMaxWidth().padding(16.dp), horizontalArrangement = Arrangement.SpaceBetween) {
                                     ValueBlock("SOURCE", "%.1f V".format(supply), Cyan)
                                     ValueBlock("RESISTOR", resistance.toInt().toString() + " Ω", Color.White)
@@ -131,36 +150,119 @@ private fun NativeLab() {
 }
 
 @Composable
-private fun CircuitCanvas(modifier: Modifier, noise: Boolean, fault: Boolean) {
+private fun CircuitCanvas(modifier: Modifier, noise: Boolean, fault: Boolean, electronPhase: Float) {
     Canvas(modifier.background(Color(0xFF091622))) {
-        val l = size.width * .14f
-        val r = size.width * .86f
-        val t = size.height * .27f
-        val b = size.height * .73f
+        val l = size.width * .13f
+        val r = size.width * .87f
+        val t = size.height * .30f
+        val b = size.height * .75f
         val m = size.width * .5f
-        val wire = if (fault) Red else Color(0xFF244257)
-        fun wireLine(a: Offset, b: Offset, c: Color = wire, w: Float = 3f) =
-            drawLine(c, a, b, strokeWidth = w, cap = StrokeCap.Round)
-        wireLine(Offset(l,t), Offset(m-25,t))
-        wireLine(Offset(m+25,t), Offset(r,t))
-        wireLine(Offset(r,t), Offset(r,b))
-        wireLine(Offset(r,b), Offset(l,b))
-        wireLine(Offset(l,b), Offset(l,t))
-        wireLine(Offset(l,(t+b)/2-15), Offset(l,(t+b)/2+15), Cyan, 3.5f)
-        wireLine(Offset(l-9,(t+b)/2-5), Offset(l+9,(t+b)/2-5), Cyan, 3.5f)
-        wireLine(Offset(l-5,(t+b)/2+6), Offset(l+5,(t+b)/2+6), Cyan, 3.5f)
-        val zig = listOf(Offset(m-25,t),Offset(m-17,t-8),Offset(m-8,t+8),Offset(m,t-8),Offset(m+8,t+8),Offset(m+17,t-8),Offset(m+25,t))
-        for (i in 0 until zig.lastIndex) wireLine(zig[i],zig[i+1],Cyan,3.5f)
-        drawCircle(if (fault) Red else Green, 10f, Offset(r,t))
-        drawCircle(Cyan, 14f, Offset(r,t), style = androidx.compose.ui.graphics.drawscope.Stroke(width = 2f))
-        for (i in 0 until 10) {
-            val p = i / 10f
-            val x = l + (r-l)*p
-            drawCircle(if (fault) Red else if (noise && i % 3 == 0) Orange else Green, 3.5f, Offset(x,t))
+        val midY = (t + b) / 2f
+        val wire = if (fault) Red else Color(0xFF42647A)
+        fun line(a: Offset, b: Offset, color: Color = wire, width: Float = 3.5f) {
+            drawLine(color, a, b, strokeWidth = width, cap = StrokeCap.Round)
         }
+        // Wire loop, with a clearly separated resistor on the upper branch.
+        line(Offset(l, t), Offset(m - 32f, t))
+        line(Offset(m + 32f, t), Offset(r, t))
+        line(Offset(r, t), Offset(r, b))
+        line(Offset(r, b), Offset(l, b))
+        line(Offset(l, b), Offset(l, t))
+
+        // Battery symbol: long/short plates and polarity marks.
+        line(Offset(l - 12f, midY - 17f), Offset(l + 12f, midY - 17f), Cyan, 4f)
+        line(Offset(l - 7f, midY + 1f), Offset(l + 7f, midY + 1f), Cyan, 4f)
+        val textPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            color = android.graphics.Color.rgb(205, 224, 238)
+            textSize = 11f * density
+            typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
+            textAlign = Paint.Align.CENTER
+        }
+        val smallPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            color = android.graphics.Color.rgb(141, 167, 187)
+            textSize = 9f * density
+            textAlign = Paint.Align.CENTER
+        }
+        drawContext.canvas.nativeCanvas.drawText("+", l + 24f, midY - 11f, textPaint)
+        drawContext.canvas.nativeCanvas.drawText("−", l + 24f, midY + 10f, textPaint)
+        drawContext.canvas.nativeCanvas.drawText("BATTERY", l + 4f, b + 22f, smallPaint)
+
+        // Resistor: standard rectangular IEC-style body, not an ambiguous zigzag.
+        val resistorLeft = m - 32f
+        val resistorRight = m + 32f
+        drawRoundRect(
+            color = Color(0xFF132C3D),
+            topLeft = Offset(resistorLeft, t - 10f),
+            size = androidx.compose.ui.geometry.Size(resistorRight - resistorLeft, 20f),
+            cornerRadius = androidx.compose.ui.geometry.CornerRadius(2f)
+        )
+        drawRoundRect(
+            color = Cyan,
+            topLeft = Offset(resistorLeft, t - 10f),
+            size = androidx.compose.ui.geometry.Size(resistorRight - resistorLeft, 20f),
+            cornerRadius = androidx.compose.ui.geometry.CornerRadius(2f),
+            style = androidx.compose.ui.graphics.drawscope.Stroke(width = 2.5f)
+        )
+        drawContext.canvas.nativeCanvas.drawText("R1 · RESISTOR", m, t - 18f, smallPaint)
+
+        // LED represented as a diode block plus two outward light arrows, clearly labelled.
+        val ledX = r
+        val ledY = midY
+        line(Offset(ledX, ledY - 25f), Offset(ledX, ledY - 11f), Cyan, 3f)
+        line(Offset(ledX - 10f, ledY - 11f), Offset(ledX + 10f, ledY - 11f), Cyan, 3f)
+        line(Offset(ledX - 10f, ledY + 11f), Offset(ledX + 10f, ledY + 11f), Cyan, 3f)
+        line(Offset(ledX, ledY + 11f), Offset(ledX, ledY + 25f), Cyan, 3f)
+        line(Offset(ledX - 18f, ledY - 5f), Offset(ledX - 29f, ledY - 16f), Orange, 2f)
+        line(Offset(ledX - 29f, ledY - 16f), Offset(ledX - 28f, ledY - 9f), Orange, 2f)
+        line(Offset(ledX - 29f, ledY - 16f), Offset(ledX - 22f, ledY - 15f), Orange, 2f)
+        line(Offset(ledX - 5f, ledY - 19f), Offset(ledX - 16f, ledY - 30f), Orange, 2f)
+        line(Offset(ledX - 16f, ledY - 30f), Offset(ledX - 9f, ledY - 29f), Orange, 2f)
+        line(Offset(ledX - 16f, ledY - 30f), Offset(ledX - 15f, ledY - 23f), Orange, 2f)
+        drawContext.canvas.nativeCanvas.drawText("LED D1", ledX - 38f, ledY + 43f, smallPaint)
+
+        // Current-path dots are explicitly illustrative; they move continuously around the loop.
+        val loopLength = 2f * (r - l) + 2f * (b - t)
+        fun pointOnLoop(progress: Float): Offset {
+            var distance = ((progress % 1f + 1f) % 1f) * loopLength
+            val topLength = r - l
+            val rightLength = b - t
+            val bottomLength = r - l
+            return when {
+                distance < topLength -> Offset(l + distance, t)
+                else -> {
+                    distance -= topLength
+                    if (distance < rightLength) Offset(r, t + distance)
+                    else {
+                        distance -= rightLength
+                        if (distance < bottomLength) Offset(r - distance, b)
+                        else {
+                            distance -= bottomLength
+                            Offset(l, b - distance)
+                        }
+                    }
+                }
+            }
+        }
+        for (i in 0 until 12) {
+            val progress = (electronPhase + i / 12f) % 1f
+            val point = pointOnLoop(progress)
+            val dotColor = when {
+                fault -> Red
+                noise && i % 3 == 0 -> Orange
+                else -> Green
+            }
+            drawCircle(dotColor.copy(alpha = .22f), radius = 7f, center = point)
+            drawCircle(dotColor, radius = 3.5f, center = point)
+        }
+        drawContext.canvas.nativeCanvas.drawText(
+            "e⁻ FLOW · ILUSTRASI",
+            size.width / 2f,
+            size.height - 7f,
+            smallPaint
+        )
         if (noise) {
-            wireLine(Offset(m+4,t+20),Offset(m+24,t+7),Orange,2f)
-            wireLine(Offset(m+24,t+7),Offset(m+42,t+22),Orange,2f)
+            line(Offset(m + 5f, t + 24f), Offset(m + 23f, t + 12f), Orange, 2f)
+            line(Offset(m + 23f, t + 12f), Offset(m + 39f, t + 25f), Orange, 2f)
         }
     }
 }
