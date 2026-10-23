@@ -3,12 +3,6 @@ package com.mazbayid.electronlogic
 import android.os.Bundle
 import android.graphics.Paint
 import android.graphics.Typeface
-import androidx.compose.animation.core.LinearEasing
-import androidx.compose.animation.core.RepeatMode
-import androidx.compose.animation.core.animateFloat
-import androidx.compose.animation.core.infiniteRepeatable
-import androidx.compose.animation.core.rememberInfiniteTransition
-import androidx.compose.animation.core.tween
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.Canvas
@@ -19,6 +13,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
@@ -57,6 +52,7 @@ private fun NativeLab() {
     var resistance by remember { mutableFloatStateOf(330f) }
     var noise by remember { mutableStateOf(false) }
     var shortCircuit by remember { mutableStateOf(false) }
+    var running by remember { mutableStateOf(true) }
     val reading = CircuitModel.calculate(supply, resistance, noise, shortCircuit)
     val current = reading.currentMilliAmps
     val output = reading.outputVolts
@@ -66,16 +62,21 @@ private fun NativeLab() {
         else -> Green
     }
     val status = reading.status to statusColor
-    val electronTransition = rememberInfiniteTransition(label = "electron-flow")
-    val electronPhase by electronTransition.animateFloat(
-        initialValue = 0f,
-        targetValue = 1f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(durationMillis = 2200, easing = LinearEasing),
-            repeatMode = RepeatMode.Restart
-        ),
-        label = "electron-phase"
-    )
+    var electronPhase by remember { mutableFloatStateOf(0f) }
+    LaunchedEffect(running, current) {
+        var previousFrame = 0L
+        while (true) {
+            withFrameNanos { frame ->
+                if (previousFrame != 0L && running) {
+                    val elapsedSeconds = (frame - previousFrame) / 1_000_000_000f
+                    // Illustrative drift speed follows calculated current, not a fixed loop timer.
+                    val speed = (current.coerceAtLeast(0f) / 20f).coerceIn(0.025f, 1.5f)
+                    electronPhase = (electronPhase + elapsedSeconds * speed) % 1f
+                }
+                previousFrame = frame
+            }
+        }
+    }
 
     Surface(Modifier.fillMaxSize(), color = Night) {
         Column(Modifier.fillMaxSize()) {
@@ -103,12 +104,24 @@ private fun NativeLab() {
                                     }
                                     Text(status.first, color = status.second, fontSize = 11.sp)
                                 }
-                                CircuitCanvas(Modifier.fillMaxWidth().height(240.dp), noise, shortCircuit, electronPhase)
+                                CircuitCanvas(Modifier.fillMaxWidth().height(240.dp), noise, shortCircuit, electronPhase, running)
                                 Row(Modifier.fillMaxWidth().padding(16.dp), horizontalArrangement = Arrangement.SpaceBetween) {
                                     ValueBlock("SOURCE", "%.1f V".format(supply), Cyan)
                                     ValueBlock("RESISTOR", resistance.toInt().toString() + " Ω", Color.White)
                                     ValueBlock("OUTPUT", "%.2f V".format(output), Cyan)
                                 }
+                            }
+                        }
+                        Card(colors = CardDefaults.cardColors(containerColor = Panel), shape = RoundedCornerShape(18.dp)) {
+                            Column(Modifier.padding(14.dp)) {
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Column(Modifier.weight(1f)) {
+                                        Text("SIGNAL SCOPE", color = Color(0xFFE7F2FB))
+                                        Text("Tegangan output · grafik ilustratif", color = Muted, fontSize = 10.sp)
+                                    }
+                                    Text(if (running) "RUN" else "PAUSE", color = if (running) Green else Orange, fontSize = 10.sp)
+                                }
+                                SignalScope(Modifier.fillMaxWidth().height(135.dp), output, supply, noise, shortCircuit, electronPhase)
                             }
                         }
                         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -123,6 +136,10 @@ private fun NativeLab() {
                                 Slider(supply, { supply = it }, valueRange = 1f..12f)
                                 Row { Text("Resistansi", Modifier.weight(1f), color = Color.LightGray); Text(resistance.toInt().toString() + " Ω", color = Cyan) }
                                 Slider(resistance, { resistance = it }, valueRange = 100f..2200f)
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Text("Animasi elektron", Modifier.weight(1f), color = Color.LightGray)
+                                    Switch(checked = running, onCheckedChange = { running = it })
+                                }
                                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                                     Button(onClick = { noise = !noise }, modifier = Modifier.weight(1f), colors = ButtonDefaults.buttonColors(containerColor = if (noise) Orange.copy(alpha = .2f) else Color(0xFF13283A))) { Text(if (noise) "✓ Noise demo" else "Noise demo") }
                                     Button(onClick = { shortCircuit = !shortCircuit }, modifier = Modifier.weight(1f), colors = ButtonDefaults.buttonColors(containerColor = if (shortCircuit) Red.copy(alpha = .2f) else Color(0xFF13283A))) { Text(if (shortCircuit) "✓ Short demo" else "Short demo") }
@@ -132,7 +149,7 @@ private fun NativeLab() {
                         }
                     }
                     "Circuit" -> InfoCard("CIRCUIT EDITOR", "Tahap berikutnya: komponen native, pin, kabel, simpul, dan penyuntingan rangkaian bebas.")
-                    else -> InfoCard("MEASUREMENT TOOLS", "Alat ukur dan grafik akan membaca hasil solver DC/transient setelah engine rangkaian tersedia.")
+                    else -> ScopePanel(output, supply, noise, shortCircuit, electronPhase, running)
                 }
             }
             NavigationBar(containerColor = Panel) {
@@ -150,7 +167,7 @@ private fun NativeLab() {
 }
 
 @Composable
-private fun CircuitCanvas(modifier: Modifier, noise: Boolean, fault: Boolean, electronPhase: Float) {
+private fun CircuitCanvas(modifier: Modifier, noise: Boolean, fault: Boolean, electronPhase: Float, running: Boolean) {
     Canvas(modifier.background(Color(0xFF091622))) {
         val l = size.width * .13f
         val r = size.width * .87f
@@ -251,8 +268,8 @@ private fun CircuitCanvas(modifier: Modifier, noise: Boolean, fault: Boolean, el
                 noise && i % 3 == 0 -> Orange
                 else -> Green
             }
-            drawCircle(dotColor.copy(alpha = .22f), radius = 7f, center = point)
-            drawCircle(dotColor, radius = 3.5f, center = point)
+            if (running) drawCircle(dotColor.copy(alpha = .22f), radius = 7f, center = point)
+            drawCircle(dotColor, radius = if (running) 3.5f else 2.5f, center = point)
         }
         drawContext.canvas.nativeCanvas.drawText(
             "e⁻ FLOW · ILUSTRASI",
@@ -264,6 +281,69 @@ private fun CircuitCanvas(modifier: Modifier, noise: Boolean, fault: Boolean, el
             line(Offset(m + 5f, t + 24f), Offset(m + 23f, t + 12f), Orange, 2f)
             line(Offset(m + 23f, t + 12f), Offset(m + 39f, t + 25f), Orange, 2f)
         }
+    }
+}
+
+@Composable
+private fun ScopePanel(output: Float, supply: Float, noise: Boolean, fault: Boolean, phase: Float, running: Boolean) {
+    Card(colors = CardDefaults.cardColors(containerColor = Panel), shape = RoundedCornerShape(18.dp)) {
+        Column(Modifier.fillMaxWidth().padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            Text("SIGNAL OSCILLOSCOPE", color = Cyan, letterSpacing = 1.sp)
+            Text("CH1 · tegangan output terhadap waktu", color = Muted, fontSize = 11.sp)
+            SignalScope(Modifier.fillMaxWidth().height(210.dp), output, supply, noise, fault, phase)
+            Row(horizontalArrangement = Arrangement.SpaceBetween, modifier = Modifier.fillMaxWidth()) {
+                Text("0 ms", color = Muted, fontSize = 10.sp)
+                Text(if (running) "RUNNING · MODEL DEMO" else "PAUSED", color = if (running) Green else Orange, fontSize = 10.sp)
+                Text("20 ms", color = Muted, fontSize = 10.sp)
+            }
+            Text(
+                if (fault) "Fault demo: garis merah menandai kondisi yang disisipkan."
+                else if (noise) "Noise demo: riak oranye adalah gangguan buatan, bukan noise hasil pengukuran."
+                else "Sinyal DC ilustratif. Bentuk gelombang belum berasal dari solver transient.",
+                color = Muted, fontSize = 11.sp
+            )
+        }
+    }
+}
+
+@Composable
+private fun SignalScope(modifier: Modifier, output: Float, supply: Float, noise: Boolean, fault: Boolean, phase: Float) {
+    Canvas(modifier.background(Color(0xFF081521))) {
+        val left = 28f
+        val right = size.width - 8f
+        val top = 12f
+        val bottom = size.height - 22f
+        val plotWidth = (right - left).coerceAtLeast(1f)
+        val plotHeight = (bottom - top).coerceAtLeast(1f)
+        val grid = Color(0xFF1D3547)
+        for (i in 0..8) {
+            val x = left + plotWidth * i / 8f
+            drawLine(grid, Offset(x, top), Offset(x, bottom), 1f)
+        }
+        for (i in 0..4) {
+            val y = top + plotHeight * i / 4f
+            drawLine(grid, Offset(left, y), Offset(right, y), 1f)
+        }
+        val maxV = supply.coerceAtLeast(1f)
+        fun yFor(v: Float): Float = bottom - (v.coerceIn(0f, maxV) / maxV) * plotHeight
+        val points = 180
+        var previous: Offset? = null
+        for (i in 0..points) {
+            val xNorm = i / points.toFloat()
+            val ripple = if (noise) maxV * 0.08f * kotlin.math.sin((xNorm * 16f + phase * 12f) * Math.PI.toFloat()) else 0f
+            val pulse = if (fault) maxV * 0.015f else 0f
+            val value = (output + ripple - pulse).coerceIn(0f, maxV)
+            val point = Offset(left + plotWidth * xNorm, yFor(value))
+            previous?.let { drawLine(if (fault) Red else if (noise) Orange else Cyan, it, point, 2f) }
+            previous = point
+        }
+        val paint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            color = android.graphics.Color.rgb(141, 167, 187)
+            textSize = 9f * density
+        }
+        drawContext.canvas.nativeCanvas.drawText("%.1f V".format(maxV), 3f, top + 8f, paint)
+        drawContext.canvas.nativeCanvas.drawText("0 V", 3f, bottom, paint)
+        drawContext.canvas.nativeCanvas.drawText("TIME →", right - 40f, size.height - 5f, paint)
     }
 }
 
