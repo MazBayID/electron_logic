@@ -2,7 +2,7 @@
 
 **Laboratorium elektronika Android native (Kotlin + Jetpack Compose).**
 
-Electron Logic membantu mempelajari respons rangkaian sederhana melalui parameter yang bisa diubah dan grafik tegangan terhadap waktu. Antarmuka native menyediakan tiga contoh model: LED dengan sumber DC, pengisian kapasitor RC, dan timer NE555 astable.
+Electron Logic membantu mempelajari respons rangkaian sederhana melalui parameter yang bisa diubah dan grafik tegangan terhadap waktu. Antarmuka native menyediakan editor jaringan resistor DC berbasis node serta tiga contoh model edukasi: LED dengan sumber DC, pengisian kapasitor RC, dan timer NE555 astable.
 
 ## Unduh APK
 
