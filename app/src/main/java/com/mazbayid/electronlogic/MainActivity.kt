@@ -22,6 +22,7 @@ import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.platform.testTag
 
 private val Night = Color(0xFF07111B)
 private val Panel = Color(0xFF0D1B29)
@@ -70,8 +71,11 @@ private fun NativeLab() {
                 if (previousFrame != 0L && running) {
                     val elapsedSeconds = (frame - previousFrame) / 1_000_000_000f
                     // Illustrative drift speed follows calculated current, not a fixed loop timer.
-                    val speed = (current.coerceAtLeast(0f) / 20f).coerceIn(0.025f, 1.5f)
-                    electronPhase = (electronPhase + elapsedSeconds * speed) % 1f
+                    // Zero calculated current means stationary markers; never force a minimum drift.
+                    val speed = (current.coerceAtLeast(0f) / 20f).coerceIn(0f, 1.5f)
+                    if (speed > 0f) {
+                        electronPhase = (electronPhase + elapsedSeconds * speed) % 1f
+                    }
                 }
                 previousFrame = frame
             }
@@ -88,7 +92,7 @@ private fun NativeLab() {
                     Text("ϟ", color = Cyan, fontSize = 38.sp)
                     Spacer(Modifier.width(10.dp))
                     Column(Modifier.weight(1f)) {
-                        Text("ELECTRON LOGIC", color = Color(0xFFE7F2FB), fontSize = 19.sp)
+                        Text("ELECTRON LOGIC", modifier = Modifier.testTag("app-title"), color = Color(0xFFE7F2FB), fontSize = 19.sp)
                         Text("NATIVE ANDROID · KOTLIN", color = Muted, fontSize = 10.sp, letterSpacing = 1.sp)
                     }
                     Text("v0.2", color = Cyan)
@@ -135,7 +139,7 @@ private fun NativeLab() {
                                 Row { Text("Tegangan sumber", Modifier.weight(1f), color = Color.LightGray); Text("%.1f V".format(supply), color = Cyan) }
                                 Slider(supply, { supply = it }, valueRange = 1f..12f)
                                 Row { Text("Resistansi", Modifier.weight(1f), color = Color.LightGray); Text(resistance.toInt().toString() + " Ω", color = Cyan) }
-                                Slider(resistance, { resistance = it }, valueRange = 100f..2200f)
+                                Slider(resistance, { resistance = it }, modifier = Modifier.testTag("resistance-slider"), valueRange = 100f..2200f)
                                 Row(verticalAlignment = Alignment.CenterVertically) {
                                     Text("Animasi elektron", Modifier.weight(1f), color = Color.LightGray)
                                     Switch(checked = running, onCheckedChange = { running = it })
