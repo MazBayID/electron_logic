@@ -24,7 +24,29 @@ data class CircuitReading(
  * Transparent teaching models, not a general-purpose SPICE solver.
  * The noise term is a deliberately injected signal, not physical thermal/shot noise.
  */
+data class SeriesCircuitReading(
+    val totalResistanceOhms: Float,
+    val ledDropVolts: Float,
+    val currentMilliAmps: Float,
+    val resistorPowerWatts: Float,
+    val ledPowerWatts: Float
+)
+
 object CircuitModel {
+    fun calculateSeries(supplyVolts: Float, resistorValuesOhms: List<Float>, ledEnabled: Boolean): SeriesCircuitReading {
+        val supply = supplyVolts.coerceIn(0f, 30f)
+        val totalResistance = resistorValuesOhms.sumOf { it.coerceAtLeast(1f).toDouble() }.toFloat().coerceAtLeast(1f)
+        val ledDrop = if (ledEnabled && supply >= 2f) 2f else 0f
+        val currentAmps = ((supply - ledDrop).coerceAtLeast(0f) / totalResistance)
+        return SeriesCircuitReading(
+            totalResistanceOhms = totalResistance,
+            ledDropVolts = ledDrop,
+            currentMilliAmps = currentAmps * 1000f,
+            resistorPowerWatts = currentAmps * currentAmps * totalResistance,
+            ledPowerWatts = currentAmps * ledDrop
+        )
+    }
+
     fun calculate(
         supplyVolts: Float,
         resistanceOhms: Float,
