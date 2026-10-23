@@ -133,7 +133,7 @@ private fun ElectronLogicApp() {
                             Text("Noise adalah sinyal gangguan yang sengaja diinjeksi. Fault demo bukan perhitungan arus hubung-singkat nyata.", color = Muted, fontSize = 11.sp, lineHeight = 16.sp)
                         }
                     }
-                    "Circuit" -> SeriesEditor()
+                    "Circuit" -> NetworkEditor()
                     else -> {
                         SectionCard("SIGNAL OSCILLOSCOPE", "CH1 · tegangan output terhadap waktu") {
                             SignalScope(Modifier.fillMaxWidth().height(250.dp), history.toList(), supply, reading.outputVolts, statusColor)
@@ -171,110 +171,99 @@ private fun ElectronLogicApp() {
 }
 
 @Composable
-private fun SeriesEditor() {
+private fun NetworkEditor() {
     var supply by remember { mutableFloatStateOf(5f) }
-    var ledEnabled by remember { mutableStateOf(true) }
-    val resistors = remember { mutableStateListOf(330f) }
-    val seriesReading = CircuitModel.calculateSeries(supply, resistors.toList(), ledEnabled)
-    val totalResistance = seriesReading.totalResistanceOhms
-    val ledDrop = seriesReading.ledDropVolts
-    val currentMilliAmps = seriesReading.currentMilliAmps
-    val resistorPower = seriesReading.resistorPowerWatts
-    val ledPower = seriesReading.ledPowerWatts
+    var highestNode by remember { mutableIntStateOf(1) }
+    val resistors = remember { mutableStateListOf(NetworkResistor(1, 0, 1000f)) }
+    val reading = CircuitNetworkModel.solve(supply, highestNode, resistors.toList())
 
     Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
-        SectionCard("SERIES CIRCUIT EDITOR", "Rakit rangkaian DC seri sederhana") {
-            Text("Topologi aktif: sumber DC → resistor seri → " + if (ledEnabled) "LED → kembali ke sumber" else "kembali ke sumber", color = Ink, fontSize = 12.sp, lineHeight = 18.sp)
-            SeriesDiagram(supply, resistors.size, ledEnabled)
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                ValueBlock("ARUS", "%.2f mA".format(currentMilliAmps), Green)
-                ValueBlock("R TOTAL", "%.0f Ω".format(totalResistance), Cyan)
-                ValueBlock("P RESISTOR", "%.3f W".format(resistorPower), Orange)
-            }
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                Button(onClick = { if (resistors.size < 5) resistors.add(330f) }, modifier = Modifier.weight(1f), enabled = resistors.size < 5) {
-                    Text("+ Resistor")
-                }
-                OutlinedButton(onClick = { if (resistors.size > 1) resistors.removeAt(resistors.lastIndex) }, modifier = Modifier.weight(1f), enabled = resistors.size > 1) {
-                    Text("− Resistor")
-                }
-            }
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Text("Pasang LED (Vf asumsi 2 V)", Modifier.weight(1f), color = Ink, fontSize = 12.sp)
-                Switch(checked = ledEnabled, onCheckedChange = { ledEnabled = it })
-            }
-            Text("Sumber tegangan", color = Muted, fontSize = 11.sp)
+        SectionCard("DC NETWORK EDITOR", "Hubungkan resistor ke node rangkaian") {
+            Text("V1 ideal: terminal positif di N1, ground di N0. Pilih node awal/akhir untuk tiap resistor; node yang sama berarti resistor ter-bypass.", color = Muted, fontSize = 11.sp, lineHeight = 16.sp)
+            Text("Tegangan sumber: %.2f V".format(supply), color = Cyan)
             Slider(value = supply, onValueChange = { supply = it }, valueRange = 1f..12f)
-            resistors.forEachIndexed { index, value ->
-                Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Text("R" + (index + 1), Modifier.weight(1f), color = Ink)
-                        Text("%.0f Ω".format(value), color = Cyan)
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Button(onClick = {
+                    if (highestNode < 6) highestNode++
+                }, modifier = Modifier.weight(1f), enabled = highestNode < 6) { Text("+ Node") }
+                OutlinedButton(onClick = {
+                    if (highestNode > 1) {
+                        highestNode--
+                        for (i in resistors.indices) {
+                            val r = resistors[i]
+                            resistors[i] = r.copy(nodeA = r.nodeA.coerceAtMost(highestNode), nodeB = r.nodeB.coerceAtMost(highestNode))
+                        }
                     }
-                    Slider(value = value, onValueChange = { resistors[index] = it }, valueRange = 100f..2200f)
+                }, modifier = Modifier.weight(1f), enabled = highestNode > 1) { Text("− Node") }
+                Button(onClick = {
+                    if (resistors.size < 8) resistors.add(NetworkResistor(1, 0, 1000f))
+                }, modifier = Modifier.weight(1f), enabled = resistors.size < 8) { Text("+ Resistor") }
+            }
+            Text("Node voltages", color = Muted, fontSize = 11.sp)
+            Row(horizontalArrangement = Arrangement.spacedBy(7.dp), modifier = Modifier.fillMaxWidth()) {
+                (0..highestNode).forEach { node ->
+                    Column(Modifier.weight(1f)) {
+                        Text(if (node == 0) "GND" else "N" + node, color = Muted, fontSize = 9.sp)
+                        Text("%.2f V".format(reading.nodeVoltages[node]), color = if (node == 1) Cyan else Ink, fontSize = 11.sp)
+                    }
                 }
             }
-            Text("Model DC seri: I = max(Vs − Vf, 0) / ΣR. Komponen saat ini disambungkan berurutan secara otomatis; ini belum editor pin/kabel bebas.", color = Muted, fontSize = 11.sp, lineHeight = 16.sp)
         }
-        SectionCard("HASIL & BATASAN", "Nilai dihitung dari komponen seri yang dipilih") {
-            Text("Tegangan sumber: %.2f V".format(supply), color = Ink)
-            Text("Tegangan asumsi LED: %.2f V".format(ledDrop), color = Ink)
-            Text("Arus rangkaian: %.3f mA".format(currentMilliAmps), color = Green)
-            Text("Daya total resistor: %.4f W".format(resistorPower), color = Orange)
-            Text("Daya LED model: %.4f W".format(ledPower), color = Blue)
-            Text(if (ledEnabled && supply < 2f) "Sumber di bawah asumsi tegangan maju LED; arus model nol." else "Asumsi LED Vf = 2 V. Tidak menghitung kurva datasheet, suhu, toleransi, atau dinamika komponen.", color = Muted, fontSize = 11.sp, lineHeight = 16.sp)
+
+        SectionCard("COMPONENTS & CONNECTIONS", resistors.size.toString() + " resistor · nodal DC solver") {
+            resistors.forEachIndexed { index, resistor ->
+                Card(colors = CardDefaults.cardColors(containerColor = Color(0xFF091622)), shape = RoundedCornerShape(12.dp)) {
+                    Column(Modifier.fillMaxWidth().padding(10.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text("R" + (index + 1), Modifier.weight(1f), color = Cyan)
+                            Text("%.0f Ω".format(resistor.resistanceOhms), color = Ink, fontSize = 12.sp)
+                            TextButton(onClick = { if (resistors.size > 1) resistors.removeAt(index) }, enabled = resistors.size > 1) { Text("Hapus") }
+                        }
+                        Row(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
+                            NodePicker("A", resistor.nodeA, highestNode) { node ->
+                                resistors[index] = resistors[index].copy(nodeA = node)
+                            }
+                            Text("──▱──", color = Green, fontSize = 12.sp)
+                            NodePicker("B", resistor.nodeB, highestNode) { node ->
+                                resistors[index] = resistors[index].copy(nodeB = node)
+                            }
+                        }
+                        Slider(
+                            value = resistor.resistanceOhms,
+                            onValueChange = { resistors[index] = resistors[index].copy(resistanceOhms = it) },
+                            valueRange = 100f..10000f
+                        )
+                        Text("I(A→B) = %.3f mA · P = %.3f mW".format(
+                            reading.resistorCurrentsMilliAmps[index],
+                            reading.resistorPowersMilliWatts[index]
+                        ), color = Muted, fontSize = 10.sp)
+                    }
+                }
+            }
+        }
+
+        SectionCard("SOLVER RESULTS", "Hasil DC dihitung dari koneksi node di atas") {
+            MetricRow("ARUS SUMBER", "%.3f mA".format(reading.sourceCurrentMilliAmps), Green, "DAYA RESISTOR", "%.3f mW".format(reading.totalPowerMilliWatts), Orange)
+            Text("Konvensi: arus resistor positif mengalir dari node A ke node B. N0 adalah ground dan N1 ditahan pada tegangan sumber.", color = Ink, fontSize = 11.sp, lineHeight = 16.sp)
+            Text("Solver ini menyelesaikan jaringan resistor linear DC dengan analisis nodal. Komponen nonlinier (LED/diode), kapasitor transient, induktor, dan model pin NE555 belum masuk ke solver umum; gunakan contoh edukasi di tab Lab untuk RC dan NE555.", color = Muted, fontSize = 11.sp, lineHeight = 16.sp)
         }
     }
 }
 
 @Composable
-private fun SeriesDiagram(supply: Float, resistorCount: Int, ledEnabled: Boolean) {
-    Canvas(Modifier.fillMaxWidth().height(145.dp).background(Color(0xFF081521))) {
-        val y = size.height * .5f
-        val left = 24f
-        val right = size.width - 24f
-        val available = right - left
-        val count = resistorCount + if (ledEnabled) 1 else 0
-        val componentWidth = if (count == 0) 30f else (available * .55f / count).coerceIn(24f, 62f)
-        val wire = Color(0xFF42647A)
-        fun line(a: Offset, b: Offset, color: Color = wire, width: Float = 2.5f) {
-            drawLine(color, a, b, strokeWidth = width, cap = StrokeCap.Round)
+private fun NodePicker(label: String, selected: Int, highestNode: Int, onSelected: (Int) -> Unit) {
+    var expanded by remember { mutableStateOf(false) }
+    Box {
+        OutlinedButton(onClick = { expanded = true }, contentPadding = PaddingValues(horizontal = 8.dp, vertical = 3.dp)) {
+            Text(label + ": " + if (selected == 0) "GND" else "N" + selected, fontSize = 11.sp)
         }
-        val paint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            textAlign = Paint.Align.CENTER
-            textSize = 9f * density
-            color = android.graphics.Color.rgb(205, 224, 238)
-        }
-        // Standard battery plates at the left edge.
-        line(Offset(left + 5f, y - 16f), Offset(left + 5f, y + 16f), Cyan, 3.5f)
-        line(Offset(left + 15f, y - 9f), Offset(left + 15f, y + 9f), Cyan, 3.5f)
-        line(Offset(left + 5f, y - 16f), Offset(left + 5f, y - 42f), wire)
-        line(Offset(left + 5f, y - 42f), Offset(right - 4f, y - 42f), wire)
-        line(Offset(right - 4f, y - 42f), Offset(right - 4f, y), wire)
-        line(Offset(right - 4f, y), Offset(right - 4f, y + 42f), wire)
-        line(Offset(right - 4f, y + 42f), Offset(left + 15f, y + 42f), wire)
-        line(Offset(left + 15f, y + 42f), Offset(left + 15f, y + 9f), wire)
-        drawContext.canvas.nativeCanvas.drawText("%.1f V".format(supply), left + 14f, y + 60f, paint)
-        val startX = left + 42f
-        val endX = right - 30f
-        val totalParts = max(1, count)
-        val step = (endX - startX) / totalParts
-        for (i in 0 until resistorCount) {
-            val x = startX + step * (i + .5f)
-            line(Offset(if (i == 0) startX else startX + step * i, y - 42f), Offset(x - componentWidth / 2f, y - 42f))
-            drawRect(Color(0xFF132C3D), Offset(x - componentWidth / 2f, y - 51f), androidx.compose.ui.geometry.Size(componentWidth, 18f))
-            drawRect(Cyan, Offset(x - componentWidth / 2f, y - 51f), androidx.compose.ui.geometry.Size(componentWidth, 18f), style = androidx.compose.ui.graphics.drawscope.Stroke(2f))
-            drawContext.canvas.nativeCanvas.drawText("R" + (i + 1), x, y - 57f, paint)
-        }
-        if (ledEnabled) {
-            val x = startX + step * (count - .5f)
-            line(Offset(x - componentWidth / 2f, y - 42f), Offset(x - 9f, y - 42f))
-            line(Offset(x - 9f, y - 51f), Offset(x - 9f, y - 33f), Green, 2.5f)
-            line(Offset(x - 9f, y - 51f), Offset(x + 7f, y - 42f), Green, 2.5f)
-            line(Offset(x - 9f, y - 33f), Offset(x + 7f, y - 42f), Green, 2.5f)
-            line(Offset(x + 7f, y - 33f), Offset(x + 7f, y - 51f), Green, 2.5f)
-            line(Offset(x + 7f, y - 42f), Offset(right - 4f, y - 42f))
-            drawContext.canvas.nativeCanvas.drawText("D1 LED", x, y - 57f, paint)
+        DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
+            (0..highestNode).forEach { node ->
+                DropdownMenuItem(
+                    text = { Text(if (node == 0) "N0 · GROUND" else if (node == 1) "N1 · V1+" else "N" + node) },
+                    onClick = { onSelected(node); expanded = false }
+                )
+            }
         }
     }
 }
