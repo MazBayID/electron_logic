@@ -52,4 +52,21 @@ class CircuitModelTest {
         assertEquals("NOISE INJEKSI", reading.status)
         assertEquals("noise", reading.statusColorKey)
     }
+    @Test
+    fun seriesEditorAddsResistancesAndCalculatesCurrentAndPower() {
+        val reading = CircuitModel.calculateSeries(5f, listOf(330f, 330f), true)
+        assertEquals(660f, reading.totalResistanceOhms, 0.001f)
+        assertEquals(2f, reading.ledDropVolts, 0.001f)
+        assertEquals(4.545f, reading.currentMilliAmps, 0.01f)
+        assertTrue(reading.resistorPowerWatts > 0f)
+        assertTrue(reading.ledPowerWatts > 0f)
+    }
+
+    @Test
+    fun seriesEditorStopsLedCurrentBelowForwardDrop() {
+        val reading = CircuitModel.calculateSeries(1.5f, listOf(330f), true)
+        assertEquals(0f, reading.currentMilliAmps, 0.001f)
+        assertEquals(0f, reading.ledPowerWatts, 0.001f)
+    }
+
 }
