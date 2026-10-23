@@ -59,6 +59,9 @@ private fun ElectronLogicApp() {
     var running by remember { mutableStateOf(true) }
     var elapsed by remember { mutableFloatStateOf(0f) }
     val history = remember { mutableStateListOf<Float>() }
+    var networkSupply by remember { mutableFloatStateOf(5f) }
+    var networkHighestNode by remember { mutableIntStateOf(1) }
+    val networkResistors = remember { mutableStateListOf(NetworkResistor(1, 0, 1000f)) }
     val reading = CircuitModel.calculate(supply, resistance, noise, shortCircuit, scenario, elapsed, noiseAmplitude)
     val statusColor = when (reading.statusColorKey) { "fault" -> Red; "noise" -> Orange; else -> Green }
 
@@ -133,7 +136,14 @@ private fun ElectronLogicApp() {
                             Text("Noise adalah sinyal gangguan yang sengaja diinjeksi. Fault demo bukan perhitungan arus hubung-singkat nyata.", color = Muted, fontSize = 11.sp, lineHeight = 16.sp)
                         }
                     }
-                    "Circuit" -> NetworkEditor()
+                    "Circuit" -> NetworkEditor(
+                        networkSupply, { networkSupply = it },
+                        networkHighestNode, { networkHighestNode = it },
+                        networkResistors,
+                        { index, resistor -> networkResistors[index] = resistor },
+                        { if (networkResistors.size < 8) networkResistors.add(NetworkResistor(1, 0, 1000f)) },
+                        { index -> if (networkResistors.size > 1) networkResistors.removeAt(index) }
+                    )
                     else -> {
                         SectionCard("SIGNAL OSCILLOSCOPE", "CH1 · tegangan output terhadap waktu") {
                             SignalScope(Modifier.fillMaxWidth().height(250.dp), history.toList(), supply, reading.outputVolts, statusColor)
@@ -171,33 +181,38 @@ private fun ElectronLogicApp() {
 }
 
 @Composable
-private fun NetworkEditor() {
-    var supply by remember { mutableFloatStateOf(5f) }
-    var highestNode by remember { mutableIntStateOf(1) }
-    val resistors = remember { mutableStateListOf(NetworkResistor(1, 0, 1000f)) }
-    val reading = CircuitNetworkModel.solve(supply, highestNode, resistors.toList())
+private fun NetworkEditor(
+    supply: Float,
+    onSupplyChange: (Float) -> Unit,
+    highestNode: Int,
+    onHighestNodeChange: (Int) -> Unit,
+    resistors: List<NetworkResistor>,
+    onResistorChange: (Int, NetworkResistor) -> Unit,
+    onAddResistor: () -> Unit,
+    onRemoveResistor: (Int) -> Unit
+) {
+    val reading = CircuitNetworkModel.solve(supply, highestNode, resistors)
 
     Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
         SectionCard("DC NETWORK EDITOR", "Hubungkan resistor ke node rangkaian") {
             Text("V1 ideal: terminal positif di N1, ground di N0. Pilih node awal/akhir untuk tiap resistor; node yang sama berarti resistor ter-bypass.", color = Muted, fontSize = 11.sp, lineHeight = 16.sp)
             Text("Tegangan sumber: %.2f V".format(supply), color = Cyan)
-            Slider(value = supply, onValueChange = { supply = it }, valueRange = 1f..12f)
+            Slider(value = supply, onValueChange = onSupplyChange, valueRange = 1f..12f)
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 Button(onClick = {
-                    if (highestNode < 6) highestNode++
+                    if (highestNode < 6) onHighestNodeChange(highestNode + 1)
                 }, modifier = Modifier.weight(1f), enabled = highestNode < 6) { Text("+ Node") }
                 OutlinedButton(onClick = {
                     if (highestNode > 1) {
-                        highestNode--
+                        val nextNode = highestNode - 1
+                        onHighestNodeChange(nextNode)
                         for (i in resistors.indices) {
                             val r = resistors[i]
-                            resistors[i] = r.copy(nodeA = r.nodeA.coerceAtMost(highestNode), nodeB = r.nodeB.coerceAtMost(highestNode))
+                            onResistorChange(i, r.copy(nodeA = r.nodeA.coerceAtMost(nextNode), nodeB = r.nodeB.coerceAtMost(nextNode)))
                         }
                     }
                 }, modifier = Modifier.weight(1f), enabled = highestNode > 1) { Text("− Node") }
-                Button(onClick = {
-                    if (resistors.size < 8) resistors.add(NetworkResistor(1, 0, 1000f))
-                }, modifier = Modifier.weight(1f), enabled = resistors.size < 8) { Text("+ Resistor") }
+                Button(onClick = onAddResistor, modifier = Modifier.weight(1f), enabled = resistors.size < 8) { Text("+ Resistor") }
             }
             Text("Node voltages", color = Muted, fontSize = 11.sp)
             Row(horizontalArrangement = Arrangement.spacedBy(7.dp), modifier = Modifier.fillMaxWidth()) {
@@ -217,20 +232,20 @@ private fun NetworkEditor() {
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Text("R" + (index + 1), Modifier.weight(1f), color = Cyan)
                             Text("%.0f Ω".format(resistor.resistanceOhms), color = Ink, fontSize = 12.sp)
-                            TextButton(onClick = { if (resistors.size > 1) resistors.removeAt(index) }, enabled = resistors.size > 1) { Text("Hapus") }
+                            TextButton(onClick = { onRemoveResistor(index) }, enabled = resistors.size > 1) { Text("Hapus") }
                         }
                         Row(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
                             NodePicker("A", resistor.nodeA, highestNode) { node ->
-                                resistors[index] = resistors[index].copy(nodeA = node)
+                                onResistorChange(index, resistor.copy(nodeA = node))
                             }
                             Text("──▱──", color = Green, fontSize = 12.sp)
                             NodePicker("B", resistor.nodeB, highestNode) { node ->
-                                resistors[index] = resistors[index].copy(nodeB = node)
+                                onResistorChange(index, resistor.copy(nodeB = node))
                             }
                         }
                         Slider(
                             value = resistor.resistanceOhms,
-                            onValueChange = { resistors[index] = resistors[index].copy(resistanceOhms = it) },
+                            onValueChange = { onResistorChange(index, resistor.copy(resistanceOhms = it)) },
                             valueRange = 100f..10000f
                         )
                         Text("I(A→B) = %.3f mA · P = %.3f mW".format(
