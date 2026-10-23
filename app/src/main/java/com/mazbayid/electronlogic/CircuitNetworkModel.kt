@@ -95,7 +95,7 @@ object CircuitNetworkModel {
         }
         val powers = resistors.mapIndexed { index, resistor ->
             val r = resistor.resistanceOhms.coerceIn(1f, 1_000_000f)
-            currents[index] * currents[index] * r
+            currents[index] * currents[index] * r / 1000f
         }
         var sourceCurrent = 0f
         resistors.forEachIndexed { index, resistor ->
