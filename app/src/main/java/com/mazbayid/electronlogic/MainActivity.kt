@@ -48,14 +48,15 @@ private fun NativeLab() {
     var resistance by remember { mutableFloatStateOf(330f) }
     var noise by remember { mutableStateOf(false) }
     var shortCircuit by remember { mutableStateOf(false) }
-    val current = if (shortCircuit) supply * 100f else ((supply - 2f).coerceAtLeast(0f) / resistance) * 1000f
-    val output = if (shortCircuit) 0.1f else (supply - current * resistance / 1000f).coerceAtLeast(0f)
-    val status = when {
-        shortCircuit -> "FAULT DEMO" to Red
-        noise -> "NOISE DEMO" to Orange
-        current > 30f -> "ARUS TINGGI" to Red
-        else -> "NORMAL" to Green
+    val reading = CircuitModel.calculate(supply, resistance, noise, shortCircuit)
+    val current = reading.currentMilliAmps
+    val output = reading.outputVolts
+    val statusColor = when (reading.statusColorKey) {
+        "fault" -> Red
+        "noise" -> Orange
+        else -> Green
     }
+    val status = reading.status to statusColor
 
     Surface(Modifier.fillMaxSize(), color = Night) {
         Column(Modifier.fillMaxSize()) {
