@@ -36,7 +36,7 @@ object CircuitModel {
     fun calculateSeries(supplyVolts: Float, resistorValuesOhms: List<Float>, ledEnabled: Boolean): SeriesCircuitReading {
         val supply = supplyVolts.coerceIn(0f, 30f)
         val totalResistance = resistorValuesOhms.sumOf { it.coerceAtLeast(1f).toDouble() }.toFloat().coerceAtLeast(1f)
-        val ledDrop = if (ledEnabled && supply >= 2f) 2f else 0f
+        val ledDrop = if (ledEnabled) 2f else 0f
         val currentAmps = ((supply - ledDrop).coerceAtLeast(0f) / totalResistance)
         return SeriesCircuitReading(
             totalResistanceOhms = totalResistance,
