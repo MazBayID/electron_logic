@@ -152,7 +152,7 @@ private fun CircuitCanvas(modifier: Modifier, noise: Boolean, fault: Boolean) {
         val zig = listOf(Offset(m-25,t),Offset(m-17,t-8),Offset(m-8,t+8),Offset(m,t-8),Offset(m+8,t+8),Offset(m+17,t-8),Offset(m+25,t))
         for (i in 0 until zig.lastIndex) wireLine(zig[i],zig[i+1],Cyan,3.5f)
         drawCircle(if (fault) Red else Green, 10f, Offset(r,t))
-        drawCircle(Color.Transparent, 14f, Offset(r,t), style = androidx.compose.ui.graphics.drawscope.Stroke(2f, Cyan))
+        drawCircle(Cyan, 14f, Offset(r,t), style = androidx.compose.ui.graphics.drawscope.Stroke(width = 2f))
         for (i in 0 until 10) {
             val p = i / 10f
             val x = l + (r-l)*p
