@@ -20,7 +20,8 @@ APK CI adalah build debug untuk pengujian, bukan rilis produksi. ID paket debug:
 - **RC:** kurva pengisian eksponensial untuk kapasitor ideal 1000 µF dengan konstanta waktu R×C.
 - **NE555 astable:** keluaran kotak konseptual dan estimasi frekuensi dengan RA=RB=R dan C=10 µF.
 - **Oscilloscope:** grafik CH1 yang merekam riwayat tegangan output model saat simulasi berjalan.
-- **Circuit view:** simbol sumber DC, resistor, LED, kapasitor, dan IC NE555 dengan label.
+- **Circuit editor:** tambah/hapus resistor seri, atur nilai tiap resistor dan tegangan sumber, pasang/nonaktifkan LED, lalu hitung arus dan daya model secara langsung.
+- **Circuit view contoh:** simbol sumber DC, resistor, LED, kapasitor, dan IC NE555 dengan label.
 - **Measurement:** ringkasan nilai tegangan, arus, waktu, status, dan estimasi frekuensi NE555.
 - **Fault/noise indicators:** warna dipakai untuk membedakan demo fault dan sinyal gangguan yang sengaja diinjeksi.
 
@@ -35,7 +36,7 @@ Versi ini adalah **alat edukasi berbasis model sederhana, bukan simulator SPICE 
 - Fault demo hanya menandai kondisi yang disisipkan; nilai arusnya bukan prediksi arus hubung-singkat nyata.
 - Titik animasi adalah penanda skematis, bukan pelacakan elektron individual.
 - Pin 5 NE555 adalah **CONTROL VOLTAGE** yang dapat mengubah ambang internal nominal sekitar 1/3 dan 2/3 VCC; pin tersebut bukan sumber noise.
-- Editor bebas untuk menambah, memindah, dan menyambungkan komponen, penyimpanan proyek, serta solver DC/transient umum belum tersedia.
+- Editor pin/kabel bebas dengan topologi arbitrer, pemindahan komponen, penyimpanan proyek, serta solver DC/transient umum belum tersedia. Editor yang tersedia saat ini merakit komponen dalam susunan seri sederhana.
 
 ## Pengembangan dan pemeriksaan
 
