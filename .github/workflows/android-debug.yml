@@ -13,6 +13,10 @@ on:
     branches: [main]
   workflow_dispatch:
 
+concurrency:
+  group: electron-logic-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 permissions:
   contents: read
 
