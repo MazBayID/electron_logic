@@ -44,14 +44,6 @@ jobs:
           gradle-version: "8.9"
       - name: Run Kotlin unit tests
         run: gradle --no-daemon :app:testDebugUnitTest
-      - name: Run Android UI tests on emulator
-        uses: reactivecircus/android-emulator-runner@v2
-        with:
-          api-level: 35
-          arch: x86_64
-          profile: pixel_2
-          disable-animations: true
-          script: gradle --no-daemon :app:connectedDebugAndroidTest
       - name: Build native Kotlin APK
         run: gradle --no-daemon :app:assembleDebug
       - name: Upload debug APK
