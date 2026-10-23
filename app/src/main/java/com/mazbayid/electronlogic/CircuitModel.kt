@@ -39,7 +39,7 @@ object CircuitModel {
         val t = timeSeconds.coerceAtLeast(0f)
         val amplitude = noiseAmplitudeVolts.coerceIn(0f, 1f)
         val injectedNoise = if (noiseEnabled) {
-            amplitude * (sin(t * 17f) + 0.45f * sin(t * 31f + 1.2f))
+            amplitude * (sin((t * 17f).toDouble()).toFloat() + 0.45f * sin((t * 31f + 1.2f).toDouble()).toFloat())
         } else 0f
 
         if (shortCircuitEnabled) {
@@ -63,7 +63,7 @@ object CircuitModel {
                 // Ideal capacitor charging from 0 V: tau = R*C, with C fixed at 1000 uF.
                 val tau = (r * 0.001f).coerceAtLeast(0.001f)
                 val phaseTime = t % (tau * 8f)
-                val cap = (v * (1f - kotlin.math.exp(-phaseTime / tau))).coerceIn(0f, v)
+                val cap = (v * (1f - kotlin.math.exp((-phaseTime / tau).toDouble()).toFloat())).coerceIn(0f, v)
                 val current = ((v - cap) / r) * 1000f
                 CircuitReading(
                     current, (cap + injectedNoise).coerceIn(0f, v), "NORMAL", "normal",
@@ -76,7 +76,7 @@ object CircuitModel {
                 val capacitanceFarads = 10e-6f
                 val frequency = 1.44f / ((3f * r) * capacitanceFarads)
                 val period = 1f / frequency
-                val high = (t % period) < (period * 0.693f)
+                val high = (t % period) < (period * (2f / 3f))
                 val out = if (high) v else 0f
                 CircuitReading(
                     currentMilliAmps = out / r * 1000f,
