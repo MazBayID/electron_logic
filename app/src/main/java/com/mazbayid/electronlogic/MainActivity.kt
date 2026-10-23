@@ -238,7 +238,7 @@ private fun NetworkEditor(
                             NodePicker("A", resistor.nodeA, highestNode) { node ->
                                 onResistorChange(index, resistor.copy(nodeA = node))
                             }
-                            Text("──▱──", color = Green, fontSize = 12.sp)
+                            ResistorSymbol()
                             NodePicker("B", resistor.nodeB, highestNode) { node ->
                                 onResistorChange(index, resistor.copy(nodeB = node))
                             }
@@ -280,6 +280,17 @@ private fun NodePicker(label: String, selected: Int, highestNode: Int, onSelecte
                 )
             }
         }
+    }
+}
+
+@Composable
+private fun ResistorSymbol() {
+    Canvas(Modifier.width(48.dp).height(24.dp)) {
+        val y = size.height / 2f
+        drawLine(Cyan, Offset(0f, y), Offset(10f, y), strokeWidth = 2f, cap = StrokeCap.Round)
+        drawRect(Color(0xFF132C3D), Offset(10f, y - 6f), androidx.compose.ui.geometry.Size(28f, 12f))
+        drawRect(Cyan, Offset(10f, y - 6f), androidx.compose.ui.geometry.Size(28f, 12f), style = androidx.compose.ui.graphics.drawscope.Stroke(2f))
+        drawLine(Cyan, Offset(38f, y), Offset(size.width, y), strokeWidth = 2f, cap = StrokeCap.Round)
     }
 }
 
