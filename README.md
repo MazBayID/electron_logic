@@ -1,29 +1,44 @@
 # Electron Logic ⚡
 
-**Simulator elektronika Android yang sedang dibangun dengan Kotlin native dan Jetpack Compose.**
+**Laboratorium elektronika Android native (Kotlin + Jetpack Compose).**
 
-Proyek sedang beralih dari prototipe HTML/WebView ke antarmuka Android native. Build Kotlin awal menyediakan dashboard lab, kontrol parameter demo, visual rangkaian, dan navigasi dasar. Ini belum menjadi solver rangkaian umum.
+Electron Logic membantu mempelajari respons rangkaian sederhana melalui parameter yang bisa diubah dan grafik tegangan terhadap waktu. Antarmuka native menyediakan tiga contoh model: LED dengan sumber DC, pengisian kapasitor RC, dan timer NE555 astable.
 
-## Unduh APK pengujian
+## Unduh APK
 
 1. Buka [Android Kotlin CI di GitHub Actions](https://github.com/MazBayID/electron_logic/actions/workflows/android-debug.yml).
-2. Pilih run terbaru berstatus **Success**.
-3. Di bagian **Artifacts**, unduh **electron-logic-debug-apk**.
+2. Buka run terbaru yang berstatus **Success**.
+3. Di bagian **Artifacts**, unduh `electron-logic-debug-apk`.
 4. Ekstrak ZIP dan instal `app-debug.apk`.
 
-APK ini merupakan debug build untuk pengujian, bukan rilis produksi. ID paket debug: `com.mazbayid.electronlogic.debug`. Artifact tersedia selama 14 hari setelah build.
+APK CI adalah build debug untuk pengujian, bukan rilis produksi. ID paket debug: `com.mazbayid.electronlogic.debug`. Artifact tersedia selama 14 hari.
 
-## Status proyek
+## Fitur yang tersedia
 
-- **Sudah ada:** antarmuka native Kotlin/Compose, area aman Android, dashboard lab, kontrol demo tegangan/resistansi, visualisasi konseptual, serta status demo noise/fault.
-- **Belum ada:** editor rangkaian bebas, koneksi pin/kabel, penyimpanan proyek, solver DC/transient yang umum, dan model fisika tervalidasi untuk komponen aktif.
-- **Catatan model:** nilai yang tampil masih memakai pendekatan demonstrasi sederhana. Visualisasi partikel bukan pelacakan elektron individual; noise demo bukan simulasi thermal/shot noise fisik.
+- **Lab:** pilih contoh rangkaian, ubah tegangan sumber dan resistansi, aktifkan injeksi noise atau demo fault, jeda/jalankan animasi, dan reset parameter.
+- **LED/DC:** pendekatan arus DC dengan asumsi tegangan maju LED tetap 2 V.
+- **RC:** kurva pengisian eksponensial untuk kapasitor ideal 1000 µF dengan konstanta waktu R×C.
+- **NE555 astable:** keluaran kotak konseptual dan estimasi frekuensi dengan RA=RB=R dan C=10 µF.
+- **Oscilloscope:** grafik CH1 yang merekam riwayat tegangan output model saat simulasi berjalan.
+- **Circuit view:** simbol sumber DC, resistor, LED, kapasitor, dan IC NE555 dengan label.
+- **Measurement:** ringkasan nilai tegangan, arus, waktu, status, dan estimasi frekuensi NE555.
+- **Fault/noise indicators:** warna dipakai untuk membedakan demo fault dan sinyal gangguan yang sengaja diinjeksi.
 
-## Rencana berikutnya
+## Batasan ilmiah yang penting
 
-1. Pisahkan model rangkaian dan UI agar dapat diuji.
-2. Bangun editor komponen, pin, kabel, simpul, dan properti.
-3. Tambahkan solver DC yang diuji dengan rangkaian referensi.
-4. Kembangkan solver transient, alat ukur, grafik, dan model komponen bertahap.
+Versi ini adalah **alat edukasi berbasis model sederhana, bukan simulator SPICE dan bukan solver rangkaian umum**.
 
-File `index.html` lama dipertahankan hanya sebagai referensi prototipe web; APK Android tidak lagi memuatnya. Laporan bug dan hasil pengujian di perangkat Android sangat membantu.
+- Model LED menganggap tegangan maju 2 V; tidak memodelkan kurva datasheet, suhu, atau toleransi.
+- Model RC menganggap kapasitor ideal dan kondisi awal sederhana; ESR, leakage, dan jaringan bebas belum dihitung.
+- Model NE555 memakai estimasi astable. Ia belum memodelkan transistor internal, beban output, jitter, atau respons listrik pin 5.
+- Noise adalah sinyal matematis yang sengaja ditambahkan ke output, bukan thermal noise atau shot noise fisik.
+- Fault demo hanya menandai kondisi yang disisipkan; nilai arusnya bukan prediksi arus hubung-singkat nyata.
+- Titik animasi adalah penanda skematis, bukan pelacakan elektron individual.
+- Pin 5 NE555 adalah **CONTROL VOLTAGE** yang dapat mengubah ambang internal nominal sekitar 1/3 dan 2/3 VCC; pin tersebut bukan sumber noise.
+- Editor bebas untuk menambah, memindah, dan menyambungkan komponen, penyimpanan proyek, serta solver DC/transient umum belum tersedia.
+
+## Pengembangan dan pemeriksaan
+
+GitHub Actions menjalankan tes unit model Kotlin lalu membangun APK debug dan mengunggah artefak. Tes emulator UI dihapus dari jalur wajib karena runner emulator tidak stabil dan tidak sebanding dengan nilai tambahnya untuk iterasi ini. Pengujian akhir interaksi dan tampilan akan dilakukan pada perangkat Android oleh tester.
+
+Sumber prototipe HTML lama tetap ada sebagai referensi historis; APK native tidak memuat halaman HTML tersebut.
