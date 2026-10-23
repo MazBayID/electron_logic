@@ -20,7 +20,7 @@ APK CI adalah build debug untuk pengujian, bukan rilis produksi. ID paket debug:
 - **RC:** kurva pengisian eksponensial untuk kapasitor ideal 1000 µF dengan konstanta waktu R×C.
 - **NE555 astable:** keluaran kotak konseptual dan estimasi frekuensi dengan RA=RB=R dan C=10 µF.
 - **Oscilloscope:** grafik CH1 yang merekam riwayat tegangan output model saat simulasi berjalan.
-- **Circuit editor:** tambah/hapus resistor seri, atur nilai tiap resistor dan tegangan sumber, pasang/nonaktifkan LED, lalu hitung arus dan daya model secara langsung.
+- **Circuit editor:** tambah/hapus node dan resistor, atur nilai resistansi, pilih node A/B untuk setiap resistor, dan hitung tegangan node, arus cabang, serta daya dengan solver DC nodal.
 - **Circuit view contoh:** simbol sumber DC, resistor, LED, kapasitor, dan IC NE555 dengan label.
 - **Measurement:** ringkasan nilai tegangan, arus, waktu, status, dan estimasi frekuensi NE555.
 - **Fault/noise indicators:** warna dipakai untuk membedakan demo fault dan sinyal gangguan yang sengaja diinjeksi.
@@ -36,10 +36,10 @@ Versi ini adalah **alat edukasi berbasis model sederhana, bukan simulator SPICE 
 - Fault demo hanya menandai kondisi yang disisipkan; nilai arusnya bukan prediksi arus hubung-singkat nyata.
 - Titik animasi adalah penanda skematis, bukan pelacakan elektron individual.
 - Pin 5 NE555 adalah **CONTROL VOLTAGE** yang dapat mengubah ambang internal nominal sekitar 1/3 dan 2/3 VCC; pin tersebut bukan sumber noise.
-- Editor pin/kabel bebas dengan topologi arbitrer, pemindahan komponen, penyimpanan proyek, serta solver DC/transient umum belum tersedia. Editor yang tersedia saat ini merakit komponen dalam susunan seri sederhana.
+- Editor grafis drag-and-drop, kabel yang digambar langsung dengan sentuhan, penyimpanan proyek, solver dioda nonlinier, dan solver transient umum belum tersedia. Solver DC saat ini mendukung jaringan resistor linear dengan sumber tegangan ideal.
 
 ## Pengembangan dan pemeriksaan
 
-GitHub Actions menjalankan tes unit model Kotlin lalu membangun APK debug dan mengunggah artefak. Tes emulator UI dihapus dari jalur wajib karena runner emulator tidak stabil dan tidak sebanding dengan nilai tambahnya untuk iterasi ini. Pengujian akhir interaksi dan tampilan akan dilakukan pada perangkat Android oleh tester.
+GitHub Actions menjalankan tes unit model LED/RC/NE555, rangkaian seri, serta solver nodal resistor lalu membangun APK debug dan mengunggah artefak. Tes emulator UI dihapus dari jalur wajib karena runner emulator tidak stabil dan tidak sebanding dengan nilai tambahnya untuk iterasi ini. Pengujian akhir interaksi dan tampilan akan dilakukan pada perangkat Android oleh tester.
 
 Sumber prototipe HTML lama tetap ada sebagai referensi historis; APK native tidak memuat halaman HTML tersebut.
