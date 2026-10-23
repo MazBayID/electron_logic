@@ -175,12 +175,12 @@ private fun SeriesEditor() {
     var supply by remember { mutableFloatStateOf(5f) }
     var ledEnabled by remember { mutableStateOf(true) }
     val resistors = remember { mutableStateListOf(330f) }
-    val totalResistance = resistors.sum().coerceAtLeast(1f)
-    val ledDrop = if (ledEnabled) 2f else 0f
-    val currentAmps = ((supply - ledDrop).coerceAtLeast(0f) / totalResistance)
-    val currentMilliAmps = currentAmps * 1000f
-    val resistorPower = currentAmps * currentAmps * totalResistance
-    val ledPower = currentAmps * ledDrop
+    val seriesReading = CircuitModel.calculateSeries(supply, resistors.toList(), ledEnabled)
+    val totalResistance = seriesReading.totalResistanceOhms
+    val ledDrop = seriesReading.ledDropVolts
+    val currentMilliAmps = seriesReading.currentMilliAmps
+    val resistorPower = seriesReading.resistorPowerWatts
+    val ledPower = seriesReading.ledPowerWatts
 
     Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
         SectionCard("SERIES CIRCUIT EDITOR", "Rakit rangkaian DC seri sederhana") {
